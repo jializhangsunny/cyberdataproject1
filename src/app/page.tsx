@@ -139,6 +139,12 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
         >
           Vulnerability Analysis
         </Link>
+        <Link
+          href="/Security Controls Analysis and ROSI Calculation"
+          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
+        >
+          Security Controls Analysis and ROSI Calculation
+        </Link>
       </nav>
     </div>
 

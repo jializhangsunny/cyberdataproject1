@@ -46,7 +46,7 @@ const VL_OPTIONS = [
 
 
 
-export default function VulnerabilityAnalysis() {
+export default function SecurityControlsAnalysis() {
     const searchParams = useSearchParams();
  const tefValue = parseFloat(searchParams.get("tefValue") || "0");
 
@@ -103,121 +103,6 @@ export default function VulnerabilityAnalysis() {
           Security Controls Analysis and ROSI Calculation
         </Link>
         </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="w-3/4 p-6 overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-6">Vulnerability Analysis</h1>
-
-        {/* Organization Vulnerabilities (Vo) */}
-        <Card className="p-6 mb-8 bg-gray-300">
-          <h2 className="text-xl font-semibold mb-4">
-            Organization Vulnerabilities (Vo) (internal)
-          </h2>
-          {INTERNAL_VULNERABILITIES.map((v) => (
-            <div key={v.id} className="mb-4">
-              <p>
-                <strong>Vulnerability ID:</strong> {v.id}
-              </p>
-              <p>
-                <strong>CVSS Score:</strong> {v.cvss}
-              </p>
-              <p>
-                <strong>Affected System:</strong> {v.system}
-              </p>
-              <p>
-                <strong>Status:</strong>{" "}
-                <select
-                  className="bg-red-400 p-2 rounded-md"
-                  defaultValue={v.status}
-                >
-                  <option>Active</option>
-                  <option>Patched</option>
-                  <option>In Progress</option>
-                </select>
-              </p>
-            </div>
-          ))}
-        </Card>
-
-        {/* Threat Actor Known Exploits (Vt) */}
-        <Card className="p-6 mb-8 bg-gray-300">
-          <h2 className="text-xl font-semibold mb-4">
-            Threat Actor Known Exploits (Vt) (external)
-          </h2>
-          {EXTERNAL_EXPLOITS.map((v) => (
-            <div key={v.id} className="mb-4">
-              <p>
-                <strong>Vulnerability ID:</strong> {v.id}
-              </p>
-              <p>
-                <strong>Attack Pattern:</strong> {v.pattern}
-              </p>
-            </div>
-          ))}
-        </Card>
-
-        {/* Common Vulnerabilities (Vtn = Vo ∩ Vt) */}
-        <Card className="p-6 mb-8 bg-gray-300">
-          <h2 className="text-xl font-semibold mb-4">
-            Common Vulnerabilities (Vtn = Vo ∩ Vt)
-          </h2>
-          {commonVulnerabilities.map((v) => {
-            const vl = vlValues[v.id] || 0;
-            const lefValue = calculateLEF(vl);
-            return (
-              <div key={v.id} className="mb-6">
-                <p>
-                  <strong>Vulnerability ID:</strong> {v.id}
-                </p>
-                <p>
-                  <strong>CVSS Score:</strong> {v.cvss}
-                </p>
-                <p>
-                  <strong>Attack Pattern:</strong> {v.pattern}
-                </p>
-                <p>
-                  <strong>Status:</strong> {v.status}
-                </p>
-                <p>
-                  <strong>Vulnerability Level (VL):</strong>{" "}
-                  <select
-                    value={vl}
-                    onChange={(e) =>
-                      handleVLChange(v.id, parseFloat(e.target.value))
-                    }
-                    className="bg-blue-300 p-2 rounded-md"
-                  >
-                    {VL_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </p>
-                <p className="text-green-500 font-bold mt-2">
-                  LEF Value: {lefValue.toFixed(2)}
-                </p>
-              </div>
-            );
-          })}
-        </Card>
-
-        {/* Total LEF Calculation */}
-        <Card className="p-6 mb-8 bg-gray-800">
-          <h2 className="text-xl text-red-500 font-semibold mb-4">Total LEF Value</h2>
-          <p className="text-red-500 font-bold text-2xl">
-            Total LEF = {totalLEF.toFixed(2)}
-          </p>
-        </Card>
-
-        {/* VL Assessment Reference Guide Button */}
-        <button
-          onClick={() => setIsGuideVisible(true)}
-          className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        >
-          Show VL Assessment Reference Guide
-        </button>
       </div>
 
       {/* VL Assessment Reference Guide Modal */}
