@@ -7,6 +7,10 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+
+import EvaluationSuggestion from "@/components/evaluationsuggestion";
+
+
 import ControlCostsAnalysis, {
   CostItem,
 } from "./controlcostsanalysis";
@@ -29,10 +33,11 @@ const recommendedControls = [
 type CostKey = "purchase" | "operational" | "training" | "manpower";
 
 
-const SecurityControlsAnalysis = () => {
+
+const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolean) => void }) => {
  const searchParams = useSearchParams();
-  const totalRisk = Number(searchParams.get("totalRisk")) || 500;
-  const [showModal, setShowModal] = useState(false);
+  const totalRisk = Number(searchParams.get("totalRisk")) || 1827;
+
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-white">
@@ -83,8 +88,8 @@ const SecurityControlsAnalysis = () => {
                 <th>Control 1 Name</th>
                 <th>Initial Risk ($M)</th>
                 <th>Risk Reduction Degree (Rd)</th>
-                <th>New Possibility</th>
-                <th>New Risk</th>
+                <th>New Vulnerability Possibility</th>
+                <th>Potential New Risk</th>
                 <th>Net Risk Reduction (NRR)</th>
               </tr>
             </thead>
@@ -158,13 +163,6 @@ const SecurityControlsAnalysis = () => {
       </tbody>
     </table>
   </div>
-
-  <button
-    onClick={() => setShowModal(true)}
-    className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-  >
-    Show Evaluation Suggestion
-  </button>
 </Card>
 
 {/* Control Costs Analysis */}
@@ -231,69 +229,27 @@ const SecurityControlsAnalysis = () => {
         </Card>
 
         {/* Modal for Evaluation Suggestion */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-gray-100 text-black p-6 rounded-lg max-w-2xl w-full">
-              <h2 className="text-xl font-bold mb-4">Evaluation Suggestion</h2>
-              <table className="w-full mb-4 text-sm">
-                <thead>
-                  <tr>
-                    <th>Effect</th>
-                    <th>Extent</th>
-                    <th>Weight</th>
-                    <th>Overlap</th>
-                    <th>Synergistic</th>
-                    <th>Conflict</th>
-                    <th>Interaction Effect</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[0.6, 0.8, 0.3].map((weight, i) => {
-                    const overlap = 0.5 + i * 0.1;
-                    const synergy = 0.4 + i * 0.1;
-                    const conflict = 0.1 * i;
-                    const ie = weight * (overlap + synergy + conflict);
-                    return (
-                      <tr key={i}>
-                        <td>Effect {i + 1}</td>
-                        <td>{(weight * 100).toFixed(0)}%</td>
-                        <td>{weight}</td>
-                        <td>{overlap}</td>
-                        <td>{synergy}</td>
-                        <td>{conflict}</td>
-                        <td>{ie.toFixed(2)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <p className="text-xl font-bold">
-                Total Interaction Effect:{" "}
-                {([0.6, 0.8, 0.3].reduce((sum, weight, i) => {
-                  const overlap = 0.5 + i * 0.1;
-                  const synergy = 0.4 + i * 0.1;
-                  const conflict = 0.1 * i;
-                  return sum + weight * (overlap + synergy + conflict);
-                }, 0)).toFixed(2)}
-              </p>
-              <button
-                onClick={() => setShowModal(false)}
-                className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
+
+  <button onClick={() => setShowModal(true)}
+          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+    Show Evaluation Suggestion
+  </button>
+
       </div>
     </div>
   );
 };
 
 export default function WrappedPage() {
+  const [showModal, setShowModal] = useState(false);
+
   return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <SecurityControlsAnalysis />
-      </Suspense>
+    <Suspense fallback={<div>Loading...</div>}>
+      <div>
+        <SecurityControlsAnalysis setShowModal={setShowModal} />
+        {showModal && <EvaluationSuggestion setShowModal={setShowModal} />}
+      </div>
+    </Suspense>
+
   )
-}
+      }
