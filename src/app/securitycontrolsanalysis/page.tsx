@@ -216,22 +216,71 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
 ]} />
 
         {/* Budget Information */}
-        <Card className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">Budget Information</h2>
-          <p>Example matrix with efficiency vs cost for recommended controls.</p>
-        </Card>
+<Card className="bg-gray-300 text-black p-6">
+  <h2 className="text-xl font-semibold mb-4">Budget Information</h2>
+
+  {/* 预算和成本计算逻辑 */}
+  {(() => {
+    const totalBudget = 200;
+
+    const controlCosts = [
+      { control: "Network Segmentation", purchase: 300, operational: 200, training: 100, manpower: 150 },
+      { control: "Patch Apache Struts", purchase: 250, operational: 180, training: 90, manpower: 140 },
+      { control: "MS17-010 Patch", purchase: 280, operational: 160, training: 85, manpower: 130 },
+    ];
+
+    // ✅ 假设 total cost 是每个 control 的总成本的总和（四项之和）
+    const totalCost = controlCosts.reduce((sum, item) => {
+      const cost = item.purchase + item.operational + item.training + item.manpower;
+      return sum + cost;
+    }, 0);
+
+    const budgetStatus = totalCost <= totalBudget ? "Within Budget" : "Exceeds Budget";
+
+    return (
+      <div className="space-y-2 text-sm">
+        <p><strong>Total Budget:</strong> ${totalBudget}</p>
+        <p><strong>Total Cost:</strong> ${totalCost}</p>
+        <p><strong>Budget Status:</strong> <span className={budgetStatus === "Within Budget" ? "text-green-600" : "text-red-600"}>{budgetStatus}</span></p>
+      </div>
+    );
+  })()}
+</Card>
 
 
         {/* ROCSI Analysis */}
-        <Card className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">ROCSI Analysis</h2>
-          <p>Control compatibility and operational risk chart.</p>
-        </Card>
+<Card className="bg-gray-300 text-black p-6">
+  <h2 className="text-xl font-semibold mb-4">ROCSI Analysis</h2>
+  <p className="mb-4">Return on Control Security Investment (ROCSI) based on selected controls.</p>
+  <div className="overflow-x-auto">
+    <table className="w-full text-sm border border-gray-400">
+      <thead className="bg-gray-200 text-black">
+        <tr>
+          <th className="border border-gray-400 p-2">Control Set</th>
+          <th className="border border-gray-400 p-2">Total NRR</th>
+          <th className="border border-gray-400 p-2">Total Interaction Effect</th>
+          <th className="border border-gray-400 p-2">Total Cost</th>
+          <th className="border border-gray-400 p-2">ROCSI</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td className="border border-gray-400 p-2">1) Patch Apache Struts<br />2) MS17-010 Patch</td>
+          <td className="border border-gray-400 p-2">3335.95</td>
+          <td className="border border-gray-400 p-2">0.8</td>
+          <td className="border border-gray-400 p-2">$1315</td>
+          <td className="border border-gray-400 p-2">3.5674</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</Card>
+
 
         {/* Modal for Evaluation Suggestion */}
 
   <button onClick={() => setShowModal(true)}
-          className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+          className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
     Show Evaluation Suggestion
   </button>
 
