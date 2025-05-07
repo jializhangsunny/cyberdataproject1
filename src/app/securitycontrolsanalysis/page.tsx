@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -290,4 +290,10 @@ const SecurityControlsAnalysis = () => {
   );
 };
 
-export default SecurityControlsAnalysis;
+export default function WrappedPage() {
+  return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <SecurityControlsAnalysis />
+      </Suspense>
+  )
+}
