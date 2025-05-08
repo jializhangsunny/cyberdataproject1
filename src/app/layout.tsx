@@ -32,7 +32,6 @@ export default function RootLayout({
       >
               {/* 将 AppProvider 包裹住所有子组件 */}
         <AppProvider>{children}</AppProvider>
-        {children}
       </body>
     </html>
   );
