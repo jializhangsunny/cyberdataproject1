@@ -55,22 +55,10 @@ const DataTheft_LEVELS: Record<string, number> = {
 
 // Location and Sector Options
 const LOCATIONS = ["U.S", "Europe", "Asia", "Africa", "South America", "North America"];
-const SECTORS = [
-  "Energy",
-  "Materials",
-  "Industrials",
-  "Consumer Discretionary",
-  "Consumer Staples",
-  "Health Care",
-  "Financials",
-  "Information Technology",
-  "Communication Services",
-  "Utilities",
-  "Real Estate",
+const SECTORS = ["Energy", "Materials", "Industrials", "Consumer Discretionary", "Consumer Staples", "Health Care", "Financials", "Information Technology", "Communication Services", "Utilities", "Real Estate",
 ];
 
 const LEVELS = ["Very high", "High", "Moderate", "Low", "Very low"];
-
 const COLORS = ["#8884d8", "#82ca9d"];
 
 export default function Home() {
@@ -123,26 +111,22 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
       <nav className="flex flex-col space-y-4">
         <Link
           href="/"
-          className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        >
+          className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600">
           Threat Actor Analysis
         </Link>
         <Link
           href="/riskanalysis"
-          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
-        >
+          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
           Risk Analysis
         </Link>
         <Link
           href="/vulnerabilityanalysis"
-          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
-        >
+          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
           Vulnerability Analysis
         </Link>
         <Link
           href="/securitycontrolsanalysis"
-          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
-        >
+          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
           Security Controls Analysis and ROSI Calculation
         </Link>
       </nav>
@@ -152,83 +136,89 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
     <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
       {/* Threat Actor Name */}
       <Card className="p-4 text-center bg-gray-800">
-        <h1 className="text-3xl font-bold">Threat Actor Name: Fin7</h1>
+        <h1 className="text-3xl text-white font-bold">Threat Actor Name: Fin7</h1>
       </Card>
 
-        {/* Sophistication Level */}
-        <div className="flex flex-col items-center flex-1">
-          <h2 className="text-xl font-semibold mb-2">Sophistication Level</h2>
-          <Select onValueChange={setSophistication} defaultValue={sophistication}>
-            <SelectTrigger className="w-64 p-2 border rounded-md bg-white text-black">
-              <SelectValue placeholder="Select Level" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(SOPHISTICATION_LEVELS).map((level) => (
-                <SelectItem key={level} value={level}>
-                  {level}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+       {/* Sophistication and Resource Level */}
+<div className="flex justify-between space-x-6">
+  {/* Sophistication Level */}
+  <Card className="p-4 w-1/2">
+    <h2 className="text-xl font-semibold mb-2">Sophistication Level</h2>
+    <Select onValueChange={setSophistication} defaultValue={sophistication}>
+      <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
+        <SelectValue placeholder="Select Level" />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.keys(SOPHISTICATION_LEVELS).map((level) => (
+          <SelectItem key={level} value={level}>
+            {level}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
 
-          <PieChart width={300} height={300}>
-            <Pie
-              data={[
-                { name: "Selected", value: sophisticationValue },
-                { name: "Remaining", value: 1 - sophisticationValue },
-              ]}
-              cx={150}
-              cy={150}
-              innerRadius={60}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {COLORS.map((color, index) => (
-                <Cell key={index} fill={color} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </div>
+    <div className="flex justify-center mt-4">
+      <PieChart width={250} height={250}>
+        <Pie
+          data={[
+            { name: "Selected", value: sophisticationValue },
+            { name: "Remaining", value: 1 - sophisticationValue },
+          ]}
+          cx="50%"
+          cy="50%"
+          innerRadius={60}
+          outerRadius={100}
+          fill="#8884d8"
+          dataKey="value"
+        >
+          {COLORS.map((color, index) => (
+            <Cell key={index} fill={color} />
+          ))}
+        </Pie>
+        <Tooltip />
+      </PieChart>
+    </div>
+  </Card>
 
-        {/* Resource Level */}
-        <div className="flex flex-col items-center flex-1">
-          <h2 className="text-xl font-semibold mb-2">Resource Level</h2>
-          <Select onValueChange={setResource} defaultValue={resource}>
-            <SelectTrigger className="w-64 p-2 border rounded-md bg-white text-black">
-              <SelectValue placeholder="Select Level" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(RESOURCE_LEVELS).map((level) => (
-                <SelectItem key={level} value={level}>
-                  {level}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+  {/* Resource Level */}
+  <Card className="p-4 w-1/2">
+    <h2 className="text-xl font-semibold mb-2">Resource Level</h2>
+    <Select onValueChange={setResource} defaultValue={resource}>
+      <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
+        <SelectValue placeholder="Select Level" />
+      </SelectTrigger>
+      <SelectContent>
+        {Object.keys(RESOURCE_LEVELS).map((level) => (
+          <SelectItem key={level} value={level}>
+            {level}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
 
-          <PieChart width={300} height={300}>
-            <Pie
-              data={[
-                { name: "Selected", value: resourceValue },
-                { name: "Remaining", value: 1 - resourceValue },
-              ]}
-              cx={150}
-              cy={150}
-              innerRadius={60}
-              outerRadius={100}
-              fill="#82ca9d"
-              dataKey="value"
-            >
-              {COLORS.map((color, index) => (
-                <Cell key={index} fill={color} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </div>
-      </div>
+    <div className="flex justify-center mt-4">
+      <PieChart width={250} height={250}>
+        <Pie
+          data={[
+            { name: "Selected", value: resourceValue },
+            { name: "Remaining", value: 1 - resourceValue },
+          ]}
+          cx="50%"
+          cy="50%"
+          innerRadius={60}
+          outerRadius={100}
+          fill="#82ca9d"
+          dataKey="value"
+        >
+          {COLORS.map((color, index) => (
+            <Cell key={index} fill={color} />
+          ))}
+        </Pie>
+        <Tooltip />
+      </PieChart>
+    </div>
+  </Card>
+</div>
 
 {/* Weights Section */}
       <Card className="p-4 mb-4 text-center">
@@ -422,5 +412,6 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
 
         </div>
     </div>
+   </div>
   );
 }
