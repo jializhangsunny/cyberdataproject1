@@ -31,6 +31,8 @@ export default function RiskAnalysis() {
   const [selectedLosses, setSelectedLosses] = useState<string[]>([]);
 
   const { totalLef } = useAppContext();
+const { setTotalRisk } = useAppContext();
+
 
 const [selections, setSelections] = useState(["", "", "", ""]);
 const handleSelect = (index: number, value: string) => {
@@ -65,6 +67,9 @@ const handleSelect = (index: number, value: string) => {
 
   // Calculate Total Risk
   const totalRisk = totalLef * totalPLM + totalAmount;
+useEffect(() => {
+  setTotalRisk(totalRisk); // 你计算出来的值
+}, [totalRisk]);
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">

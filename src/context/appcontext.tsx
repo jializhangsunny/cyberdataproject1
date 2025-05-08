@@ -7,6 +7,8 @@ interface AppContextType {
   setTefValue: (value: number) => void;
     totalLef: number;
   settotalLef: (value: number) => void;
+ totalRisk: number;
+  setTotalRisk: (value: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -16,8 +18,11 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tefValue, setTefValue] = useState<number>(2.5); // 初始值为 2.5
 const [totalLef, settotalLef] = useState(1); // 默认值为1
+  const [totalRisk, setTotalRisk] = useState<number>(0); //默认值>0
+
   return (
-    <AppContext.Provider value={{ tefValue, setTefValue,totalLef,settotalLef}}>
+    <AppContext.Provider value={{ tefValue, setTefValue,totalLef,settotalLef, totalRisk,
+        setTotalRisk,}}>
       {children}
     </AppContext.Provider>
   );

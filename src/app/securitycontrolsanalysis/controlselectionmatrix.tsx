@@ -5,7 +5,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { CostItem } from "./controlcostsanalysis";
-
+import { useAppContext } from "@/context/appcontext";
 
 interface ControlSelectionMatrixProps {
   costs: CostItem[];
@@ -15,7 +15,8 @@ const ControlSelectionMatrix: React.FC<ControlSelectionMatrixProps> = ({ costs }
   const [selections, setSelections] = useState<(string | "Yes" | "No")[]>(
     costs.map(() => "No")
   );
-
+  const { totalRisk } = useAppContext();
+  const safeTotalRisk = typeof totalRisk === "number" ? totalRisk : 0;
   const handleChange = (index: number, value: "Yes" | "No") => {
     const updated = [...selections];
     updated[index] = value;
@@ -25,8 +26,8 @@ const ControlSelectionMatrix: React.FC<ControlSelectionMatrixProps> = ({ costs }
 
   const nrrValues = {
     "Network Segmentation": 1458.975886,
-    "MS17-010 Patch": 1827.469857,
-    "Patch Apache Struts": 1827.469857,
+    "MS17-010 Patch": safeTotalRisk.toFixed(2),
+    "Patch Apache Struts": safeTotalRisk.toFixed(2),
   };
 
   return (
@@ -68,7 +69,7 @@ const ControlSelectionMatrix: React.FC<ControlSelectionMatrixProps> = ({ costs }
    const nrr = nrrValues[control.control as keyof typeof nrrValues];
     return (
       <td key={i} className="border border-gray-400 p-2">
-        {nrr ? nrr.toFixed(2) : "N/A"}
+        {nrr ? nrr : "N/A"}
       </td>
     );
   })}
@@ -97,7 +98,10 @@ const ControlSelectionMatrix: React.FC<ControlSelectionMatrixProps> = ({ costs }
                   control.training +
                   control.manpower;
                const nrr = nrrValues[control.control as keyof typeof nrrValues];
-const rosi = (nrr - totalCost) / totalCost;
+const rosi =
+  nrr && totalCost
+    ? (parseFloat(nrr) - totalCost) / totalCost
+    : 0;
                 return (
                   <td key={i} className="border border-gray-400 p-2 font-bold">
                     {rosi.toFixed(2)}

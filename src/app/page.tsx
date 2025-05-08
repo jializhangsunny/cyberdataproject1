@@ -64,11 +64,11 @@ const LEVELS = ["Very high", "High", "Moderate", "Low", "Very low"];
 const COLORS = ["#8884d8", "#82ca9d"];
 
 export default function Home() {
-  const [sophistication, setSophistication] = useState("None");
-  const [resource, setResource] = useState("Government");
-  const [motivation1, setMotivation1] = useState("Very high"); // Set initial level
-  const [motivation2, setMotivation2] = useState("Very high"); // Set initial level
-  const [dataTheft, setDataTheft] = useState("Very high"); // Set initial level for data theft
+  const [sophistication, setSophistication] = useState("Advanced");
+  const [resource, setResource] = useState("Organization");
+  const [motivation1, setMotivation1] = useState("Low"); // Set initial level
+  const [motivation2, setMotivation2] = useState("Moderate"); // Set initial level
+  const [dataTheft, setDataTheft] = useState("Moderate"); // Set initial level for data theft
 
   // calculation values
   const sophisticationValue = SOPHISTICATION_LEVELS[sophistication] || 0;
