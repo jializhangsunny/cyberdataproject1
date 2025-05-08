@@ -47,26 +47,22 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         <nav className="flex flex-col space-y-4">
           <Link
             href="/"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
-          >
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
             Threat Actor Analysis
           </Link>
           <Link
-            href="/riskanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
-          >
-            Risk Analysis
+            href="/vulnerabilityanalysis"
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
+            Vulnerability Analysis
           </Link>
           <Link
-            href="/vulnerabilityanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
-          >
-            Vulnerability Analysis
+            href="/riskanalysis"
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
+            Risk Analysis
           </Link>
            <Link
           href="/securitycontrolsanalysis"
-          className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        >
+          className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600">
           Security Controls Analysis and ROSI Calculation
         </Link>
         </nav>

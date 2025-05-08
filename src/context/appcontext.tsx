@@ -5,17 +5,19 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 interface AppContextType {
   tefValue: number;
   setTefValue: (value: number) => void;
+    totalLef: number;
+  settotalLef: (value: number) => void;
 }
 
-// 创建 Context，初始值为 null
-const AppContext = createContext<AppContextType | null>(null);
+const AppContext = createContext<AppContextType | undefined>(undefined);
+
 
 // 创建 Provider
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tefValue, setTefValue] = useState<number>(2.5); // 初始值为 2.5
-
+const [totalLef, settotalLef] = useState(1); // 默认值为1
   return (
-    <AppContext.Provider value={{ tefValue, setTefValue }}>
+    <AppContext.Provider value={{ tefValue, setTefValue,totalLef,settotalLef}}>
       {children}
     </AppContext.Provider>
   );

@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@mui/material";
 import { Tab } from "@headlessui/react";
 import Link from "next/link";
+import { useAppContext } from "@/context/appcontext";
+
 
 // data
 const SOPHISTICATION_LEVELS: Record<string, number> = {
@@ -95,9 +97,19 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
     // Average Goal Score (same as data theft for now)
   const AverageGoalScore = dataTheftScore;
 
+//component tefvalue
+
+  const { setTefValue } = useAppContext();
+
+
  // TEF Calculation
  const tefValue =
  threatAbility *  AverageMotivationscore * AverageGoalScore * locationMatchScore * sectorMatchScore;
+
+  useEffect(() => {
+  setTefValue(tefValue);
+}, [tefValue]);
+
 
  // Tab States
  const [selectedTab, setSelectedTab] = useState(0);
@@ -115,14 +127,14 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
           Threat Actor Analysis
         </Link>
         <Link
-          href="/riskanalysis"
-          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
-          Risk Analysis
-        </Link>
-        <Link
           href="/vulnerabilityanalysis"
           className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
           Vulnerability Analysis
+        </Link>
+        <Link
+          href="/riskanalysis"
+          className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
+          Risk Analysis
         </Link>
         <Link
           href="/securitycontrolsanalysis"
