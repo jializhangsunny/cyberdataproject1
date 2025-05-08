@@ -100,7 +100,7 @@ const ControlSelectionMatrix: React.FC<ControlSelectionMatrixProps> = ({ costs }
                const nrr = nrrValues[control.control as keyof typeof nrrValues];
 const rosi =
   nrr && totalCost
-    ? (parseFloat(nrr) - totalCost) / totalCost
+    ? (Number(nrr) - totalCost) / totalCost
     : 0;
                 return (
                   <td key={i} className="border border-gray-400 p-2 font-bold">
