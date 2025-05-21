@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGri
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@mui/material";
-import { Tab } from "@headlessui/react";
+//import { Tab } from "@headlessui/react";
 import Link from "next/link";
 import { useAppContext } from "@/context/appcontext";
 import WeightInput from '@/components/weightinput';
@@ -34,18 +34,18 @@ const RESOURCE_LEVELS: Record<string, number> = {
 
 // Financial Gain and Notoriety levels
 const FinantialRelevance_LEVELS: Record<string, number> = {
-  "Very high": 0.8,
-  High: 0.64,
-  Moderate: 0.4,
-  Low: 0.16,
+  "Very high": 1,
+  High: 0.8,
+  Moderate: 0.5,
+  Low: 0.2,
   "Very low": 0,
 };
 
 const NotorietyRelevance_LEVELS: Record<string, number> = {
-  "Very high": 0.2,
-  High: 0.16,
-  Moderate: 0.1,
-  Low: 0.04,
+  "Very high": 1,
+  High: 0.8,
+  Moderate: 0.5,
+  Low: 0.2,
   "Very low": 0,
 };
 
@@ -56,6 +56,8 @@ const DataTheft_LEVELS: Record<string, number> = {
   Low: 0.2,
   "Very low": 0,
 };
+
+
 
 // Location and Sector Options
 const LOCATIONS = ["U.S", "Europe", "Asia", "Africa", "South America", "North America"];
@@ -72,7 +74,9 @@ export default function Home() {
   const [motivation1, setMotivation1] = useState("Low"); // Set initial level
   const [motivation2, setMotivation2] = useState("Moderate"); // Set initial level
   const [dataTheft, setDataTheft] = useState("Moderate"); // Set initial level for data theft
-
+//Weights
+const [financialGainWeight, setFinancialGainWeight] = useState(0.8);
+const [notorietyWeight, setNotorietyWeight] = useState(0.2);
   // calculation values
   const sophisticationValue = SOPHISTICATION_LEVELS[sophistication] || 0;
   const resourceValue = RESOURCE_LEVELS[resource] || 0;
@@ -116,7 +120,7 @@ const [w2, setW2] = useState(0.4);
 
 
  // Tab States
- const [selectedTab, setSelectedTab] = useState(0);
+ //const [selectedTab, setSelectedTab] = useState(0);
 
 
   return (
@@ -178,7 +182,7 @@ const [w2, setW2] = useState(0.4);
         <Pie
           data={[
             { name: "Selected", value: sophisticationValue },
-            { name: "Remaining", value: 1 - sophisticationValue },
+            { name: "Remaining", value: 1 - sophisticationValue},
           ]}
           cx="50%"
           cy="50%"
@@ -253,9 +257,55 @@ const [w2, setW2] = useState(0.4);
         <Card className="p-4 flex-1">
           <h2 className="text-xl font-semibold">Motivation Analysis</h2>
 
+{/* Weight Inputs */}
+<div className="flex items-center space-x-4 mb-4">
+  {/* Financial Gain Weight Input */}
+  <div>
+    <label className="block text-sm font-medium">Financial Gain Weight</label>
+    <input
+      type="number"
+      step="0.1"
+      min="0"
+      max="1"
+      value={financialGainWeight.toFixed(1)}
+      onChange={(e) => {
+        const input = parseFloat(e.target.value);
+        if (!isNaN(input) && input >= 0 && input <= 1) {
+          const clamped = Math.min(1, Math.max(0, input));
+          setFinancialGainWeight(parseFloat(clamped.toFixed(1)));
+          setNotorietyWeight(parseFloat((1 - clamped).toFixed(1)));
+        }
+      }}
+      className="border p-1 rounded w-24"
+    />
+  </div>
+
+  {/* Notoriety Weight Input */}
+  <div>
+    <label className="block text-sm font-medium">Notoriety Weight</label>
+    <input
+      type="number"
+      step="0.1"
+      min="0"
+      max="1"
+      value={notorietyWeight.toFixed(1)}
+      onChange={(e) => {
+        const input = parseFloat(e.target.value);
+        if (!isNaN(input) && input >= 0 && input <= 1) {
+          const clamped = Math.min(1, Math.max(0, input));
+          setNotorietyWeight(parseFloat(clamped.toFixed(1)));
+          setFinancialGainWeight(parseFloat((1 - clamped).toFixed(1)));
+        }
+      }}
+      className="border p-1 rounded w-24"
+    />
+  </div>
+</div>
+
           {/* Financial Gain Slider */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold">Financial Gain</h3>
+            <div className="flex items-center space-x-4">
             <Slider
               value={LEVELS.indexOf(motivation1)} // slider value corresponds to index of levels
               onChange={(e, newValue) => setMotivation1(LEVELS[newValue as number])}
@@ -266,11 +316,15 @@ const [w2, setW2] = useState(0.4);
               step={1}
               sx={{ width: 300 }}
             />
+                <span className="text-md font-medium text-gray-700">
+      {(FinantialRelevance_LEVELS[motivation1] * financialGainWeight).toFixed(2)}
+    </span>
           </div>
-
+          </div>
           {/* Notoriety Slider */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold">Notoriety</h3>
+                <div className="flex items-center space-x-4">
             <Slider
               value={LEVELS.indexOf(motivation2)} // slider value corresponds to index of levels
               onChange={(e, newValue) => setMotivation2(LEVELS[newValue as number])}
@@ -281,6 +335,10 @@ const [w2, setW2] = useState(0.4);
               step={1}
               sx={{ width: 300 }}
             />
+              <span className="text-md font-medium text-gray-700">
+      {(NotorietyRelevance_LEVELS[motivation2] * notorietyWeight).toFixed(2)}
+              </span>
+               </div>
           </div>
 
           {/* Average Motivation Score */}
@@ -293,6 +351,17 @@ const [w2, setW2] = useState(0.4);
         {/* Goals Analysis (Data Theft) */}
         <Card className="p-4 flex-1">
           <h2 className="text-xl font-semibold">Goals Analysis</h2>
+
+{/* Data Theft Weight Display */}
+    <div className="mb-4">
+      <label className="block text-sm font-medium">Data Theft Weight</label>
+      <input
+        type="number"
+        value={1}
+        disabled
+        className="border p-1 rounded w-24 bg-gray-100 text-gray-600"
+      />
+    </div>
 
           {/* Data Theft Slider */}
           <div className="mb-8">
