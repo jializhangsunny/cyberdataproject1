@@ -8,6 +8,8 @@ import { Slider } from "@mui/material";
 import { Tab } from "@headlessui/react";
 import Link from "next/link";
 import { useAppContext } from "@/context/appcontext";
+import WeightInput from '@/components/weightinput';
+
 
 
 // data
@@ -64,6 +66,7 @@ const LEVELS = ["Very high", "High", "Moderate", "Low", "Very low"];
 const COLORS = ["#8884d8", "#82ca9d"];
 
 export default function Home() {
+
   const [sophistication, setSophistication] = useState("Advanced");
   const [resource, setResource] = useState("Organization");
   const [motivation1, setMotivation1] = useState("Low"); // Set initial level
@@ -87,9 +90,10 @@ const [threatSector, setThreatSector] = useState("Energy");
 // Calculate Match Scores
 const locationMatchScore = orgLocation === threatLocation ? 1 : 0;
 const sectorMatchScore = orgSector === threatSector ? 1 : 0;
-  // 权重
-  const w1 = 0.6;
-  const w2 = 0.4;
+
+  // weights
+const [w1, setW1] = useState(0.6);
+const [w2, setW2] = useState(0.4);
 
   // Threat Ability calculation
   const threatAbility = sophisticationValue * w1 + resourceValue * w2;
@@ -233,21 +237,14 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
 </div>
 
 {/* Weights Section */}
-      <Card className="p-4 mb-4 text-center">
-        <h2 className="text-xl font-semibold">Weights</h2>
-        <p className="text-gray-400">
-          Sophistication Weight (w1): <span className="text-red">{w1}</span>
-        </p>
-        <p className="text-gray-400">
-          Resource Weight (w2): <span className="text-red">{w2}</span>
-        </p>
-        <p className="text-gray-400 font-bold mt-2">w1 + w2 = 1</p>
-      </Card>
+      <div className="flex justify-center">
+     <WeightInput w1={w1} w2={w2} setW1={setW1} setW2={setW2} />
+</div>
 
       {/* Threat Ability Calculation */}
       <Card className="p-4 mb-8 text-center bg-red-700">
         <h2 className="text-xl font-semibold">Threat Ability (TA)</h2>
-        <p className="text-white text-2xl font-bold mt-2">{threatAbility.toFixed(2)}</p>
+        <p className="text-white text-2xl font-bold mt-2">{threatAbility.toFixed(4)}</p>
       </Card>
 
       {/* Motivation Analysis and Goals Analysis */}
