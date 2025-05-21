@@ -107,7 +107,7 @@ const sectorMatchScore = orgSector === threatSector ? 1 : 0;
  threatAbility *  AverageMotivationscore * AverageGoalScore * locationMatchScore * sectorMatchScore;
 
   useEffect(() => {
-  setTefValue(tefValue);
+    setTefValue(tefValue);
 }, [tefValue]);
 
 
