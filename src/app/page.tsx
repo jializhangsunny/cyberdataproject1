@@ -101,7 +101,7 @@ const [w2, setW2] = useState(0.4);
 
   // Threat Ability calculation
   const threatAbility = sophisticationValue * w1 + resourceValue * w2;
-  const AverageMotivationscore = motivationScore1 + motivationScore2;
+  const AverageMotivationscore = (FinantialRelevance_LEVELS[motivation1] * financialGainWeight) + (NotorietyRelevance_LEVELS[motivation2] * notorietyWeight);
     // Average Goal Score (same as data theft for now)
   const AverageGoalScore = dataTheftScore;
 
