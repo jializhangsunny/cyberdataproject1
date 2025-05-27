@@ -61,8 +61,7 @@ interface DetailedThreatActor {
   updatedAt: string;
 }
 
-// Configuration constants
-const SOPHISTICATION_LEVELS = {
+const SOPHISTICATION_LEVELS: { [key: string]: number } = {
   "None": 1 - 6/7,
   "Minimal": 1 - 5/7,
   "Intermediate": 1 - 4/7,
@@ -72,7 +71,7 @@ const SOPHISTICATION_LEVELS = {
   "Strategic": 1,
 };
 
-const RESOURCE_LEVELS = {
+const RESOURCE_LEVELS: { [key: string]: number } = {
   "Government": 1,
   "Organization": 1 - 1/6,
   "Team": 1 - 2/6,
@@ -81,7 +80,7 @@ const RESOURCE_LEVELS = {
   "Individual": 1 - 5/6,
 };
 
-const RELEVANCE_LEVELS = {
+const RELEVANCE_LEVELS: { [key: string]: number } = {
   "Very High": 1.0,
   "High": 0.8,
   "Moderate": 0.5,
