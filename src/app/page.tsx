@@ -4,8 +4,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+
+import { Slider } from "@mui/material";
+//import { Tab } from "@headlessui/react";
+
 import Link from "next/link";
 import { useAppContext } from "@/context/appcontext";
+import WeightInput from '@/components/weightinput';
+
 
 // Import your API service
 import threatActorService from '../services/threatActors'
@@ -39,6 +45,7 @@ interface DetailedGoal {
   weight: number;
   id: string;
 }
+
 
 interface DetailedExploit {
   vulnerabilityId: string;
@@ -78,6 +85,7 @@ const RESOURCE_LEVELS: { [key: string]: number } = {
   "Contest": 1 - 3/6,
   "Club": 1 - 4/6,
   "Individual": 1 - 5/6,
+
 };
 
 const RELEVANCE_LEVELS: { [key: string]: number } = {
@@ -88,21 +96,25 @@ const RELEVANCE_LEVELS: { [key: string]: number } = {
   "Very Low": 0.1,
 };
 
+
 const LOCATIONS = ["U.S.", "Europe", "Asia", "Africa", "South America", "North America"];
 const SECTORS = [
   "Energy", "Materials", "Industrials", "Consumer Discretionary", 
   "Consumer Staples", "Health Care", "Financials", "Information Technology", 
   "Communication Services", "Utilities", "Real Estate"
+
 ];
 
 const COLORS = ["#8884d8", "#82ca9d"];
 
 export default function Home() {
+
   // Backend data state
   const [threatActors, setThreatActors] = useState<ThreatActorSummary[]>([]);
   const [selectedThreatActor, setSelectedThreatActor] = useState<DetailedThreatActor | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
 
   // Form state
   const [orgLocation, setOrgLocation] = useState<string>("U.S.");
@@ -187,7 +199,9 @@ export default function Home() {
 
   const threatAbility = sophisticationValue * w1 + resourceValue * w2;
 
+
   const tefValue = threatAbility * motivationScore * goalScore * locationMatchScore * sectorMatchScore;
+
 
   useEffect(() => {
     setTefValue(tefValue);
@@ -221,6 +235,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
+
       {/* Sidebar Navigation */}
       <div className="w-1/4 bg-gray-800 p-6">
         <h2 className="text-2xl font-bold mb-4">Navigation</h2>
@@ -246,6 +261,7 @@ export default function Home() {
             Security Controls Analysis and ROSI Calculation
           </Link>
         </nav>
+
       </div>
 
       {/* Main Content */}
