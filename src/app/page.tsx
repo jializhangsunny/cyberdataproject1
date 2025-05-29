@@ -6,6 +6,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useAppContext } from "@/context/appcontext";
+import { useAuth } from "@/context/authContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Import your API service
 import threatActorService from '../services/threatActors'
@@ -97,7 +99,7 @@ const SECTORS = [
 
 const COLORS = ["#8884d8", "#82ca9d"];
 
-export default function Home() {
+function HomeContent() {
   // Backend data state
   const [threatActors, setThreatActors] = useState<ThreatActorSummary[]>([]);
   const [selectedThreatActor, setSelectedThreatActor] = useState<DetailedThreatActor | null>(null);
@@ -109,6 +111,7 @@ export default function Home() {
   const [orgSector, setOrgSector] = useState<string>("Energy");
 
   const { setTefValue } = useAppContext();
+  const { user, logout, hasRole } = useAuth();
 
   // Fetch all threat actors on component mount
   useEffect(() => {
@@ -223,32 +226,99 @@ export default function Home() {
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar Navigation */}
       <div className="w-1/4 bg-gray-800 p-6">
+        {/* User Info Section */}
+        <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
+              <p className="text-sm text-gray-300">{user?.email}</p>
+              <span className={`inline-block px-2 py-1 text-xs rounded mt-1 ${
+                user?.type === 'admin' ? 'bg-red-600 text-white' :
+                user?.type === 'analyst' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
+              }`}>
+                {user?.type?.toUpperCase()}
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to logout?')) {
+                  logout();
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+              title="Logout"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
         <h2 className="text-2xl font-bold mb-4">Navigation</h2>
         <nav className="flex flex-col space-y-4">
           <Link
             href="/"
-            className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+            className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
             Threat Actor Analysis
           </Link>
           <Link
             href="/vulnerabilityanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
             Vulnerability Analysis
           </Link>
           <Link
             href="/riskanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
             Risk Analysis
           </Link>
           <Link
             href="/securitycontrolsanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
             Security Controls Analysis and ROSI Calculation
           </Link>
+          
+          {/* Admin-only User Management Link */}
+          {hasRole(['admin']) && (
+            <Link
+              href="/users"
+              className="p-3 bg-purple-700 text-white rounded-md hover:bg-purple-600 transition-colors border-l-4 border-purple-400">
+              <div className="flex items-center justify-between">
+                <span>User Management</span>
+                <span className="text-xs bg-purple-500 px-2 py-1 rounded">ADMIN</span>
+              </div>
+            </Link>
+          )}
         </nav>
+
+        {/* User Role Info */}
+        <div className="mt-6 p-3 bg-gray-700 rounded-lg">
+          <h4 className="text-sm font-semibold text-gray-300 mb-2">Access Level</h4>
+          <div className="text-xs text-gray-400">
+            {user?.type === 'admin' && (
+              <div>
+                <p>✓ Full system access</p>
+                <p>✓ User management</p>
+                <p>✓ All analysis tools</p>
+              </div>
+            )}
+            {user?.type === 'analyst' && (
+              <div>
+                <p>✓ All analysis tools</p>
+                <p>✓ Data modification</p>
+                <p>⨯ User management</p>
+              </div>
+            )}
+            {user?.type === 'viewer' && (
+              <div>
+                <p>✓ View analysis</p>
+                <p>⨯ Data modification</p>
+                <p>⨯ User management</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Keep all your existing content exactly as it is */}
       <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
         {/* Threat Actor Selection */}
         {threatActors.length > 0 && (
@@ -507,5 +577,13 @@ export default function Home() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <ProtectedRoute requiredRoles={['viewer', 'analyst', 'admin']}>
+      <HomeContent />
+    </ProtectedRoute>
   );
 }
