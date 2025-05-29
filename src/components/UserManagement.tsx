@@ -1,4 +1,4 @@
-// components/UserManagement.js
+// components/UserManagement.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -7,13 +7,37 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import userService from '../services/users';
 import { useAuth } from '../context/authContext';
 
-const UserManagement = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
-  const [formData, setFormData] = useState({
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  type: 'viewer' | 'analyst' | 'admin';
+  createdAt: string;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+  type: 'viewer' | 'analyst' | 'admin';
+}
+
+interface ErrorResponse {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+const UserManagement: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     password: '',
@@ -26,33 +50,34 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (): Promise<void> => {
     try {
       setLoading(true);
-      const data = await userService.getAll();
+      const data = await userService.getAll() as User[];
       setUsers(data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch users');
+      const error = err as ErrorResponse;
+      setError(error.response?.data?.message || error.message || 'Failed to fetch users');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleSelectChange = (value) => {
+  const handleSelectChange = (value: 'viewer' | 'analyst' | 'admin'): void => {
     setFormData({
       ...formData,
       type: value
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     try {
       if (editingUser) {
@@ -69,11 +94,12 @@ const UserManagement = () => {
       resetForm();
       setError('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Operation failed');
+      const error = err as ErrorResponse;
+      setError(error.response?.data?.message || error.message || 'Operation failed');
     }
   };
 
-  const handleEdit = (user) => {
+  const handleEdit = (user: User): void => {
     setEditingUser(user);
     setFormData({
       name: user.name,
@@ -84,19 +110,20 @@ const UserManagement = () => {
     setShowCreateForm(true);
   };
 
-  const handleDelete = async (userId) => {
+  const handleDelete = async (userId: string): Promise<void> => {
     if (window.confirm('Are you sure you want to deactivate this user?')) {
       try {
         await userService.remove(userId);
         await fetchUsers();
         setError('');
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete user');
+        const error = err as ErrorResponse;
+        setError(error.response?.data?.message || error.message || 'Failed to delete user');
       }
     }
   };
 
-  const resetForm = () => {
+  const resetForm = (): void => {
     setFormData({
       name: '',
       email: '',
@@ -137,7 +164,6 @@ const UserManagement = () => {
           </div>
         )}
 
-        {/* Create/Edit User Form */}
         {showCreateForm && (
           <Card className="p-6 mb-6 bg-gray-800 text-white">
             <h2 className="text-xl font-bold mb-4">
@@ -177,7 +203,7 @@ const UserManagement = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    minLength="6"
+                    minLength={6}
                     className="w-full p-3 border border-gray-600 rounded bg-gray-700 text-white"
                   />
                 </div>
@@ -216,7 +242,6 @@ const UserManagement = () => {
           </Card>
         )}
 
-        {/* Users List */}
         <Card className="p-6 bg-gray-800 text-white">
           <h2 className="text-xl font-bold mb-4">Users</h2>
           

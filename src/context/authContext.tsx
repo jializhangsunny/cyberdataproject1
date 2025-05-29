@@ -1,71 +1,99 @@
-// context/authContext.js
+// context/authContext.tsx
 "use client";
-
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import userService from '../services/users';
 
-const AuthContext = createContext();
+interface User {
+ id: string;
+ email: string;
+ type: string;
+ name: string;
+}
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+interface LoginCredentials {
+ email: string;
+ password: string;
+}
+
+interface LoginResponse {
+ user: User;
+ token?: string;
+}
+
+interface AuthContextType {
+ user: User | null;
+ login: (credentials: LoginCredentials) => Promise<LoginResponse>;
+ logout: () => void;
+ isAuthenticated: () => boolean;
+ hasRole: (requiredRoles: string[] | string) => boolean;
+ loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = (): AuthContextType => {
+ const context = useContext(AuthContext);
+ if (!context) {
+   throw new Error('useAuth must be used within an AuthProvider');
+ }
+ return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+interface AuthProviderProps {
+ children: ReactNode;
+}
 
-  useEffect(() => {
-    // Check if user is logged in on app start
-    const currentUser = userService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
-    setLoading(false);
-  }, []);
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+ const [user, setUser] = useState<User | null>(null);
+ const [loading, setLoading] = useState<boolean>(true);
 
-  const login = async (credentials) => {
-    try {
-      const response = await userService.login(credentials);
-      setUser(response.user);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  };
+ useEffect(() => {
+   const currentUser = userService.getCurrentUser() as User | null;
+   if (currentUser) {
+     setUser(currentUser);
+   }
+   setLoading(false);
+ }, []);
 
-  const logout = () => {
-    userService.logout();
-    setUser(null);
-  };
+ const login = async (credentials: LoginCredentials): Promise<LoginResponse> => {
+   try {
+     const response = await userService.login(credentials);
+     setUser(response.user);
+     return response;
+   } catch (error) {
+     throw error;
+   }
+ };
 
-  const isAuthenticated = () => {
-    return !!user;
-  };
+ const logout = (): void => {
+   userService.logout();
+   setUser(null);
+ };
 
-  const hasRole = (requiredRoles) => {
-    if (!user) return false;
-    if (Array.isArray(requiredRoles)) {
-      return requiredRoles.includes(user.type);
-    }
-    return user.type === requiredRoles;
-  };
+ const isAuthenticated = (): boolean => {
+   return !!user;
+ };
 
-  const value = {
-    user,
-    login,
-    logout,
-    isAuthenticated,
-    hasRole,
-    loading
-  };
+ const hasRole = (requiredRoles: string[] | string): boolean => {
+   if (!user) return false;
+   if (Array.isArray(requiredRoles)) {
+     return requiredRoles.includes(user.type);
+   }
+   return user.type === requiredRoles;
+ };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+ const value: AuthContextType = {
+   user,
+   login,
+   logout,
+   isAuthenticated,
+   hasRole,
+   loading
+ };
+
+ return (
+   <AuthContext.Provider value={value}>
+     {children}
+   </AuthContext.Provider>
+ );
 };

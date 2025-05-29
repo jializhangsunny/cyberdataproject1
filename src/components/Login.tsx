@@ -1,37 +1,49 @@
-// components/Login.js
 "use client";
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/authContext';
 import { Card } from '@/components/ui/card';
 
-const Login = () => {
-  const [credentials, setCredentials] = useState({
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface ErrorResponse {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+const Login: React.FC = () => {
+  const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: ''
   });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   
   const { login } = useAuth();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setCredentials({
       ...credentials,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+    
     try {
       await login(credentials);
-      // Redirect will be handled by the parent component
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      const error = err as ErrorResponse;
+      setError(error.response?.data?.message || error.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +72,6 @@ const Login = () => {
               placeholder="Enter your email"
             />
           </div>
-
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
               Password
@@ -76,13 +87,11 @@ const Login = () => {
               placeholder="Enter your password"
             />
           </div>
-
           {error && (
             <div className="text-red-400 text-sm text-center">
               {error}
             </div>
           )}
-
           <button
             type="submit"
             disabled={loading}

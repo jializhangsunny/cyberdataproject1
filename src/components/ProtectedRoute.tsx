@@ -1,11 +1,18 @@
-// components/ProtectedRoute.js
+// components/ProtectedRoute.tsx
 "use client";
-
 import React from 'react';
 import { useAuth } from '../context/authContext';
 import Login from './Login';
 
-const ProtectedRoute = ({ children, requiredRoles = [] }) => {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRoles?: string[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requiredRoles = [] 
+}) => {
   const { isAuthenticated, hasRole, loading } = useAuth();
 
   if (loading) {
