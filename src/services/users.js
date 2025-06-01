@@ -1,7 +1,8 @@
 // services/users.js
 import axios from 'axios';
 
-const baseUrl = 'http://localhost:5000/api/users';
+// const baseUrl = 'http://localhost:5000/api/users';
+const baseUrl = 'https://jializhangsunny.github.io/cyberdataproject1/';
 
 // Set up axios interceptor to include auth token
 const getAuthToken = () => {
