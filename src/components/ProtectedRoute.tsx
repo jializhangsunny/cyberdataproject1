@@ -1,4 +1,3 @@
-// components/ProtectedRoute.tsx
 "use client";
 import React from 'react';
 import { useAuth } from '../context/authContext';

@@ -801,9 +801,9 @@ function HomeContent() {
         <Card className="p-4 mb-8 text-center bg-red-700">
           <h2 className="text-xl font-semibold">Final TEF Calculation</h2>
           <p className="text-white text-lg mb-2">
-            TA ({threatAbility.toFixed(6)}) × Motivation ({motivationScore.toFixed(3)}) × Goals ({goalScore.toFixed(3)}) × Location ({locationMatchScore}) × Sector ({sectorMatchScore})
+            TA ({threatAbility.toFixed(3)}) × Motivation ({motivationScore.toFixed(3)}) × Goals ({goalScore.toFixed(3)}) × Location ({locationMatchScore}) × Sector ({sectorMatchScore})
           </p>
-          <p className="text-white text-3xl font-bold">{tefValue.toFixed(3)}</p>
+          <p className="text-white text-3xl font-bold">{tefValue.toFixed(6)}</p>
         </Card>
       </div>
     </div>
