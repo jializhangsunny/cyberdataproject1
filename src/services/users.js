@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // const baseUrl = 'http://localhost:5000/api/users';
-const baseUrl = 'https://rocsi-production.up.railway.app';
+const baseUrl = 'https://rocsi-production.up.railway.app/api/users';
 
 // Set up axios interceptor to include auth token
 const getAuthToken = () => {
