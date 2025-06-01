@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const baseUrl = 'http://localhost:5000/api/threatActors'
+// const baseUrl = 'http://localhost:5000/api/threatActors'
+const baseUrl = 'https://rocsi-production.up.railway.app'
 
 const getAll = async () => {
     const response = await axios.get(baseUrl)
