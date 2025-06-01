@@ -110,8 +110,52 @@ function HomeContent() {
   const [orgLocation, setOrgLocation] = useState<string>("U.S.");
   const [orgSector, setOrgSector] = useState<string>("Energy");
 
+  // Weight states
+  const [w1, setW1] = useState<number>(0.6);
+  const [w2, setW2] = useState<number>(0.4);
+  
+  // Custom weights for motivations and goals
+  const [motivationWeights, setMotivationWeights] = useState<{ [key: string]: number }>({});
+  const [goalWeights, setGoalWeights] = useState<{ [key: string]: number }>({});
+  const [motivationRelevanceLevels, setMotivationRelevanceLevels] = useState<{ [key: string]: string }>({});
+  const [goalRelevanceLevels, setGoalRelevanceLevels] = useState<{ [key: string]: string }>({});
+
   const { setTefValue } = useAppContext();
   const { user, logout, hasRole } = useAuth();
+
+  // Initialize weights when threat actor changes
+  useEffect(() => {
+    if (selectedThreatActor) {
+      // Initialize motivation weights using backend values
+      const initialMotivationWeights: { [key: string]: number } = {};
+      const initialMotivationRelevance: { [key: string]: string } = {};
+      
+      if (selectedThreatActor.motivations.length > 0) {
+        selectedThreatActor.motivations.forEach(motivation => {
+          // Use the weight from the backend database
+          initialMotivationWeights[motivation.id] = motivation.weight;
+          initialMotivationRelevance[motivation.id] = motivation.relevanceLevel;
+        });
+      }
+      
+      // Initialize goal weights using backend values
+      const initialGoalWeights: { [key: string]: number } = {};
+      const initialGoalRelevance: { [key: string]: string } = {};
+      
+      if (selectedThreatActor.goals.length > 0) {
+        selectedThreatActor.goals.forEach(goal => {
+          // Use the weight from the backend database
+          initialGoalWeights[goal.id] = goal.weight;
+          initialGoalRelevance[goal.id] = goal.relevanceLevel;
+        });
+      }
+      
+      setMotivationWeights(initialMotivationWeights);
+      setGoalWeights(initialGoalWeights);
+      setMotivationRelevanceLevels(initialMotivationRelevance);
+      setGoalRelevanceLevels(initialGoalRelevance);
+    }
+  }, [selectedThreatActor]);
 
   // Fetch all threat actors on component mount
   useEffect(() => {
@@ -157,6 +201,76 @@ function HomeContent() {
     await loadThreatActorDetails(threatActorId);
   }, [loadThreatActorDetails]);
 
+  // Weight adjustment handlers
+  const handleW1Change = (value: number) => {
+    const newW1 = value / 100;
+    const newW2 = 1 - newW1;
+    setW1(newW1);
+    setW2(newW2);
+  };
+
+  const handleMotivationWeightChange = (motivationId: string, value: number) => {
+    if (!selectedThreatActor) return;
+    
+    const newWeight = value / 100;
+    const otherMotivations = selectedThreatActor.motivations.filter(m => m.id !== motivationId);
+    
+    if (otherMotivations.length === 0) {
+      setMotivationWeights({ [motivationId]: 1.0 });
+      return;
+    }
+    
+    const remainingWeight = 1.0 - newWeight;
+    const weightPerOther = remainingWeight / otherMotivations.length;
+    
+    const newWeights = { ...motivationWeights };
+    newWeights[motivationId] = newWeight;
+    
+    otherMotivations.forEach(motivation => {
+      newWeights[motivation.id] = weightPerOther;
+    });
+    
+    setMotivationWeights(newWeights);
+  };
+
+  const handleGoalWeightChange = (goalId: string, value: number) => {
+    if (!selectedThreatActor) return;
+    
+    const newWeight = value / 100;
+    const otherGoals = selectedThreatActor.goals.filter(g => g.id !== goalId);
+    
+    if (otherGoals.length === 0) {
+      setGoalWeights({ [goalId]: 1.0 });
+      return;
+    }
+    
+    const remainingWeight = 1.0 - newWeight;
+    const weightPerOther = remainingWeight / otherGoals.length;
+    
+    const newWeights = { ...goalWeights };
+    newWeights[goalId] = newWeight;
+    
+    otherGoals.forEach(goal => {
+      newWeights[goal.id] = weightPerOther;
+    });
+    
+    setGoalWeights(newWeights);
+  };
+
+  const handleMotivationRelevanceChange = (motivationId: string, relevanceLevel: string) => {
+    setMotivationRelevanceLevels(prev => ({
+      ...prev,
+      [motivationId]: relevanceLevel
+    }));
+  };
+
+  const handleGoalRelevanceChange = (goalId: string, relevanceLevel: string) => {
+    setGoalRelevanceLevels(prev => ({
+      ...prev,
+      [goalId]: relevanceLevel
+    }));
+  };
+
   // Calculations
   const sophisticationValue = selectedThreatActor 
     ? (SOPHISTICATION_LEVELS[selectedThreatActor.sophisticationLevel] || 0)
@@ -166,27 +280,28 @@ function HomeContent() {
     ? (RESOURCE_LEVELS[selectedThreatActor.resourceLevel] || 0)
     : 0;
 
-  // Calculate motivation scores using backend data
+  // Calculate motivation scores using custom weights and relevance levels
   const motivationScore = selectedThreatActor 
     ? selectedThreatActor.motivations.reduce((total, motivation) => {
-        const relevanceValue = RELEVANCE_LEVELS[motivation.relevanceLevel] || 0;
-        return total + (relevanceValue * motivation.weight);
+        const customRelevanceLevel = motivationRelevanceLevels[motivation.id] || motivation.relevanceLevel;
+        const relevanceValue = RELEVANCE_LEVELS[customRelevanceLevel] || 0;
+        const customWeight = motivationWeights[motivation.id] !== undefined ? motivationWeights[motivation.id] : motivation.weight;
+        return total + (relevanceValue * customWeight);
       }, 0)
     : 0;
 
-  // Calculate goal scores using backend data
+  // Calculate goal scores using custom weights and relevance levels
   const goalScore = selectedThreatActor 
     ? selectedThreatActor.goals.reduce((total, goal) => {
-        const relevanceValue = RELEVANCE_LEVELS[goal.relevanceLevel] || 0;
-        return total + (relevanceValue * goal.weight);
+        const customRelevanceLevel = goalRelevanceLevels[goal.id] || goal.relevanceLevel;
+        const relevanceValue = RELEVANCE_LEVELS[customRelevanceLevel] || 0;
+        const customWeight = goalWeights[goal.id] !== undefined ? goalWeights[goal.id] : goal.weight;
+        return total + (relevanceValue * customWeight);
       }, 0)
     : 0;
   
   const locationMatchScore = selectedThreatActor && orgLocation === selectedThreatActor.location ? 1 : 0;
   const sectorMatchScore = selectedThreatActor && orgSector === selectedThreatActor.sector ? 1 : 0;
-
-  const w1 = 0.6;
-  const w2 = 0.4;
 
   const threatAbility = sophisticationValue * w1 + resourceValue * w2;
 
@@ -318,7 +433,7 @@ function HomeContent() {
         </div>
       </div>
 
-      {/* Main Content - Keep all your existing content exactly as it is */}
+      {/* Main Content */}
       <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
         {/* Threat Actor Selection */}
         {threatActors.length > 0 && (
@@ -360,7 +475,7 @@ function HomeContent() {
                 <Pie
                   data={[
                     { name: "Selected", value: sophisticationValue },
-                    { name: "Remaining", value: 1 - sophisticationValue },
+                    { name: "Remaining", value:(1 - sophisticationValue) },
                   ]}
                   cx="50%"
                   cy="50%"
@@ -368,9 +483,11 @@ function HomeContent() {
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
+                  animationBegin={0}
+                  animationDuration={800}
                 >
                   {COLORS.map((color, index) => (
-                    <Cell key={index} fill={color} />
+                    <Cell key={`cell-${index}`} fill={color} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -398,9 +515,11 @@ function HomeContent() {
                   outerRadius={100}
                   fill="#82ca9d"
                   dataKey="value"
+                  animationBegin={0}
+                  animationDuration={800}
                 >
                   {COLORS.map((color, index) => (
-                    <Cell key={index} fill={color} />
+                    <Cell key={`cell-${index}`} fill={color} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -409,81 +528,192 @@ function HomeContent() {
           </Card>
         </div>
 
-        {/* Weights Section */}
-        <Card className="p-4 mb-4 text-center">
-          <h2 className="text-xl font-semibold">Weights</h2>
-          <p className="text-gray-400">
-            Sophistication Weight (w1): <span className="text-red">{w1}</span>
-          </p>
-          <p className="text-gray-400">
-            Resource Weight (w2): <span className="text-red">{w2}</span>
-          </p>
-          <p className="text-gray-400 font-bold mt-2">w1 + w2 = 1</p>
+        {/* Weights Section with Sliders */}
+        <Card className="p-4 mb-4 bg-gray-800">
+          <h2 className="text-xl font-semibold mb-4 text-center text-white">Weight Adjustment</h2>
+          
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-white">Sophistication Weight (w1): <span className="font-bold text-blue-400">{w1.toFixed(2)}</span></span>
+              <span className="text-white">Resource Weight (w2): <span className="font-bold text-green-400">{w2.toFixed(2)}</span></span>
+            </div>
+            
+            <div className="mb-2">
+              <label className="block text-sm text-gray-300 mb-1">
+                Sophistication vs Resource Weight (w1 = {w1.toFixed(2)}, w2 = {w2.toFixed(2)})
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={w1 * 100}
+                onChange={(e) => handleW1Change(Number(e.target.value))}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>All Resource (w2=1.0)</span>
+                <span>Balanced</span>
+                <span>All Sophistication (w1=1.0)</span>
+              </div>
+            </div>
+          </div>
         </Card>
 
         {/* Threat Ability Calculation */}
         <Card className="p-4 mb-8 text-center bg-red-700">
           <h2 className="text-xl font-semibold">Threat Ability (TA)</h2>
+          <p className="text-white text-lg mb-2">
+            {sophisticationValue.toFixed(2)} × {w1.toFixed(2)} + {resourceValue.toFixed(2)} × {w2.toFixed(2)}
+          </p>
           <p className="text-white text-2xl font-bold mt-2">{threatAbility.toFixed(2)}</p>
         </Card>
 
         {/* Motivation Analysis and Goals Analysis */}
         <div className="flex justify-between space-x-8 mb-8">
           {/* Motivation Analysis */}
-          <Card className="p-4 flex-1">
-            <h2 className="text-xl font-semibold mb-4">Motivation Analysis</h2>
+          <Card className="p-4 flex-1 bg-gray-800">
+            <h2 className="text-xl font-semibold mb-4 text-white">Motivation Analysis</h2>
             
             {selectedThreatActor?.motivations && selectedThreatActor.motivations.length > 0 ? (
               <div className="space-y-4">
-                {selectedThreatActor.motivations.map((motivation, index) => (
-                  <div key={motivation.id} className="p-3 bg-gray-700 rounded-md">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{motivation.name}</span>
-                      <span className="text-sm text-gray-300">{motivation.relevanceLevel}</span>
+                {selectedThreatActor.motivations.map((motivation, index) => {
+                  const currentWeight = motivationWeights[motivation.id] !== undefined ? motivationWeights[motivation.id] : motivation.weight;
+                  const currentRelevance = motivationRelevanceLevels[motivation.id] || motivation.relevanceLevel;
+                  const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
+                  
+                  return (
+                    <div key={motivation.id} className="p-4 bg-gray-700 rounded-md">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="font-medium text-white">{motivation.name}</span>
+                        <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
+                      </div>
+                      
+                      {/* Relevance Level Selector */}
+                      <div className="mb-3">
+                        <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
+                        <Select 
+                          onValueChange={(value) => handleMotivationRelevanceChange(motivation.id, value)} 
+                          value={currentRelevance}
+                        >
+                          <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.keys(RELEVANCE_LEVELS).map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level} ({RELEVANCE_LEVELS[level]})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Weight Slider */}
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-1">
+                          Weight: {currentWeight.toFixed(3)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={currentWeight * 100}
+                          onChange={(e) => handleMotivationWeightChange(motivation.id, Number(e.target.value))}
+                          className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400 mt-1">
-                      Weight: {motivation.weight} | Score: {((RELEVANCE_LEVELS[motivation.relevanceLevel] || 0) * motivation.weight).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-gray-400">No motivations available</div>
             )}
 
             {/* Total Motivation Score */}
-            <Card className="p-4 text-center bg-gray-800 mt-4">
+            <Card className="p-4 text-center bg-gray-900 mt-4">
               <h3 className="text-lg text-white font-semibold">Total Motivation Score</h3>
-              <p className="text-white text-2xl font-bold mt-2">{motivationScore.toFixed(2)}</p>
+              <p className="text-white text-2xl font-bold mt-2">{motivationScore.toFixed(3)}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Sum of weights: {selectedThreatActor ? 
+                  Object.values(motivationWeights).reduce((sum, weight) => sum + weight, 0).toFixed(3) : 
+                  '0.000'
+                }
+              </p>
             </Card>
           </Card>
 
           {/* Goals Analysis */}
-          <Card className="p-4 flex-1">
-            <h2 className="text-xl font-semibold mb-4">Goals Analysis</h2>
+          <Card className="p-4 flex-1 bg-gray-800">
+            <h2 className="text-xl font-semibold mb-4 text-white">Goals Analysis</h2>
 
             {selectedThreatActor?.goals && selectedThreatActor.goals.length > 0 ? (
               <div className="space-y-4">
-                {selectedThreatActor.goals.map((goal, index) => (
-                  <div key={goal.id} className="p-3 bg-gray-700 rounded-md">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">{goal.name}</span>
-                      <span className="text-sm text-gray-300">{goal.relevanceLevel}</span>
+                {selectedThreatActor.goals.map((goal, index) => {
+                  const currentWeight = goalWeights[goal.id] !== undefined ? goalWeights[goal.id] : goal.weight;
+                  const currentRelevance = goalRelevanceLevels[goal.id] || goal.relevanceLevel;
+                  const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
+                  
+                  return (
+                    <div key={goal.id} className="p-4 bg-gray-700 rounded-md">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="font-medium text-white">{goal.name}</span>
+                        <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
+                      </div>
+                      
+                      {/* Relevance Level Selector */}
+                      <div className="mb-3">
+                        <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
+                        <Select 
+                          onValueChange={(value) => handleGoalRelevanceChange(goal.id, value)} 
+                          value={currentRelevance}
+                        >
+                          <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.keys(RELEVANCE_LEVELS).map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {level} ({RELEVANCE_LEVELS[level]})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {/* Weight Slider */}
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-1">
+                          Weight: {currentWeight.toFixed(3)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={currentWeight * 100}
+                          onChange={(e) => handleGoalWeightChange(goal.id, Number(e.target.value))}
+                          className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
                     </div>
-                    <div className="text-sm text-gray-400 mt-1">
-                      Weight: {goal.weight} | Score: {((RELEVANCE_LEVELS[goal.relevanceLevel] || 0) * goal.weight).toFixed(2)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-gray-400">No goals available</div>
             )}
 
             {/* Total Goal Score */}
-            <Card className="p-4 text-center bg-gray-800 mt-4">
+            <Card className="p-4 text-center bg-gray-900 mt-4">
               <h3 className="text-lg text-white font-semibold">Total Goal Score</h3>
-              <p className="text-white text-2xl font-bold mt-2">{goalScore.toFixed(2)}</p>
+              <p className="text-white text-2xl font-bold mt-2">{goalScore.toFixed(3)}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Sum of weights: {selectedThreatActor ? 
+                  Object.values(goalWeights).reduce((sum, weight) => sum + weight, 0).toFixed(3) : 
+                  '0.000'
+                }
+              </p>
             </Card>
           </Card>
         </div>
@@ -571,9 +801,9 @@ function HomeContent() {
         <Card className="p-4 mb-8 text-center bg-red-700">
           <h2 className="text-xl font-semibold">Final TEF Calculation</h2>
           <p className="text-white text-lg mb-2">
-            TA ({threatAbility.toFixed(2)}) × Motivation ({motivationScore.toFixed(2)}) × Goals ({goalScore.toFixed(2)}) × Location ({locationMatchScore}) × Sector ({sectorMatchScore})
+            TA ({threatAbility.toFixed(6)}) × Motivation ({motivationScore.toFixed(3)}) × Goals ({goalScore.toFixed(3)}) × Location ({locationMatchScore}) × Sector ({sectorMatchScore})
           </p>
-          <p className="text-white text-3xl font-bold">{tefValue.toFixed(4)}</p>
+          <p className="text-white text-3xl font-bold">{tefValue.toFixed(3)}</p>
         </Card>
       </div>
     </div>
