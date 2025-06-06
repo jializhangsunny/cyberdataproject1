@@ -459,6 +459,8 @@ const handleGoalWeightChange = (id:string, weight:number)=>{
         orgSec={orgSector}
         w1={w1}
         w2={w2}
+        onOrgLocChange={setOrgLocation}
+        onOrgSecChange={setOrgSector}
       />
     );
   })}

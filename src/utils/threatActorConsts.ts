@@ -25,4 +25,11 @@ export const RELEVANCE_LEVELS: Record<string, number> = {
   'Very Low': 0.1,
 };
 
+export const LOCATIONS = ["U.S.", "Europe", "Asia", "Africa", "South America", "North America"];
+export const SECTORS = [
+  "Energy", "Materials", "Industrials", "Consumer Discretionary",
+  "Consumer Staples", "Health Care", "Financials", "Information Technology",
+  "Communication Services", "Utilities", "Real Estate"
+];
+
 export const COLORS = ['#8884d8', '#82ca9d'];
