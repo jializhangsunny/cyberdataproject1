@@ -12,6 +12,10 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 // Import your API service
 import threatActorService from '../services/threatActors'
 
+import ThreatActorCard from '@/components/ThreatActorCard'
+
+import { SOPHISTICATION_LEVELS, RESOURCE_LEVELS,RELEVANCE_LEVELS } from "@/utils/threatActorConsts";
+
 // TypeScript interfaces for getAll response
 interface ThreatActorSummary {
   id: string;
@@ -63,43 +67,13 @@ interface DetailedThreatActor {
   updatedAt: string;
 }
 
-const SOPHISTICATION_LEVELS: { [key: string]: number } = {
-  "None": 1 - 6/7,
-  "Minimal": 1 - 5/7,
-  "Intermediate": 1 - 4/7,
-  "Advanced": 1 - 3/7,
-  "Expert": 1 - 2/7,
-  "Innovator": 1 - 1/7,
-  "Strategic": 1,
-};
-
-const RESOURCE_LEVELS: { [key: string]: number } = {
-  "Government": 1,
-  "Organization": 1 - 1/6,
-  "Team": 1 - 2/6,
-  "Contest": 1 - 3/6,
-  "Club": 1 - 4/6,
-  "Individual": 1 - 5/6,
-};
-
-const RELEVANCE_LEVELS: { [key: string]: number } = {
-  "Very High": 1.0,
-  "High": 0.8,
-  "Moderate": 0.5,
-  "Low": 0.2,
-  "Very Low": 0.1,
-};
-
-const LOCATIONS = ["U.S.", "Europe", "Asia", "Africa", "South America", "North America"];
-const SECTORS = [
-  "Energy", "Materials", "Industrials", "Consumer Discretionary", 
-  "Consumer Staples", "Health Care", "Financials", "Information Technology", 
-  "Communication Services", "Utilities", "Real Estate"
-];
-
-const COLORS = ["#8884d8", "#82ca9d"];
 
 function HomeContent() {
+  // selecting several ta
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+const [detailMap, setDetailMap]     = useState<Record<string, DetailedThreatActor>>({});
+const maxSelect = 10;
+
   // Backend data state
   const [threatActors, setThreatActors] = useState<ThreatActorSummary[]>([]);
   const [selectedThreatActor, setSelectedThreatActor] = useState<DetailedThreatActor | null>(null);
@@ -132,23 +106,22 @@ function HomeContent() {
       
       if (selectedThreatActor.motivations.length > 0) {
         selectedThreatActor.motivations.forEach(motivation => {
-          // Use the weight from the backend database
           initialMotivationWeights[motivation.id] = motivation.weight;
           initialMotivationRelevance[motivation.id] = motivation.relevanceLevel;
         });
       }
-      
+
+
+
+
       // Initialize goal weights using backend values
       const initialGoalWeights: { [key: string]: number } = {};
       const initialGoalRelevance: { [key: string]: string } = {};
       
-      if (selectedThreatActor.goals.length > 0) {
-        selectedThreatActor.goals.forEach(goal => {
-          // Use the weight from the backend database
-          initialGoalWeights[goal.id] = goal.weight;
-          initialGoalRelevance[goal.id] = goal.relevanceLevel;
-        });
-      }
+       selectedThreatActor.goals.forEach(g => {
+      initialGoalWeights[g.id]   = g.weight;
+      initialGoalRelevance[g.id] = g.relevanceLevel;
+    });
       
       setMotivationWeights(initialMotivationWeights);
       setGoalWeights(initialGoalWeights);
@@ -178,9 +151,23 @@ function HomeContent() {
         setLoading(false);
       }
     };
-
     fetchThreatActors();
   }, []);
+
+  useEffect(() => {
+  const need = selectedIds.filter(id => !detailMap[id]);
+  if (!need.length) return;
+
+  Promise.all(need.map(id => threatActorService.getById(id)))
+    .then(arr => {
+      setDetailMap(prev => {
+        const copy = { ...prev };
+        arr.forEach(ta => (copy[ta.id] = ta));
+        return copy;
+      });
+    })
+    .catch(console.error);
+}, [selectedIds]);
 
   // Load detailed threat actor data
   const loadThreatActorDetails = useCallback(async (threatActorId: string) => {
@@ -209,53 +196,15 @@ function HomeContent() {
     setW2(newW2);
   };
 
-  const handleMotivationWeightChange = (motivationId: string, value: number) => {
-    if (!selectedThreatActor) return;
-    
-    const newWeight = value / 100;
-    const otherMotivations = selectedThreatActor.motivations.filter(m => m.id !== motivationId);
-    
-    if (otherMotivations.length === 0) {
-      setMotivationWeights({ [motivationId]: 1.0 });
-      return;
-    }
-    
-    const remainingWeight = 1.0 - newWeight;
-    const weightPerOther = remainingWeight / otherMotivations.length;
-    
-    const newWeights = { ...motivationWeights };
-    newWeights[motivationId] = newWeight;
-    
-    otherMotivations.forEach(motivation => {
-      newWeights[motivation.id] = weightPerOther;
-    });
-    
-    setMotivationWeights(newWeights);
-  };
+  const handleMotivationWeightChange = (id:string, weight:number)=>{
+  setMotivationWeights(prev => ({ ...prev, [id]: weight }));
+};
 
-  const handleGoalWeightChange = (goalId: string, value: number) => {
-    if (!selectedThreatActor) return;
-    
-    const newWeight = value / 100;
-    const otherGoals = selectedThreatActor.goals.filter(g => g.id !== goalId);
-    
-    if (otherGoals.length === 0) {
-      setGoalWeights({ [goalId]: 1.0 });
-      return;
-    }
-    
-    const remainingWeight = 1.0 - newWeight;
-    const weightPerOther = remainingWeight / otherGoals.length;
-    
-    const newWeights = { ...goalWeights };
-    newWeights[goalId] = newWeight;
-    
-    otherGoals.forEach(goal => {
-      newWeights[goal.id] = weightPerOther;
-    });
-    
-    setGoalWeights(newWeights);
-  };
+const handleGoalWeightChange = (id:string, weight:number)=>{
+  setGoalWeights(prev => ({ ...prev, [id]: weight }));
+};
+
+
 
   const handleMotivationRelevanceChange = (motivationId: string, relevanceLevel: string) => {
     setMotivationRelevanceLevels(prev => ({
@@ -435,109 +384,45 @@ function HomeContent() {
 
       {/* Main Content */}
       <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
-        {/* Threat Actor Selection */}
-        {threatActors.length > 0 && (
-          <Card className="p-4 bg-gray-800">
-            <h2 className="text-xl font-semibold mb-2 text-white">Select Threat Actor</h2>
-            <Select onValueChange={handleThreatActorChange} value={selectedThreatActor?.id || ""}>
-              <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
-                <SelectValue placeholder="Select Threat Actor" />
-              </SelectTrigger>
-              <SelectContent>
-                {threatActors.map((actor) => (
-                  <SelectItem key={actor.id} value={actor.id}>
-                    {actor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {error && <div className="text-sm text-red-400 mt-2">{error}</div>}
-          </Card>
-        )}
 
-        {/* Threat Actor Name */}
-        <Card className="p-4 text-center bg-gray-800">
-          <h1 className="text-3xl text-white font-bold">
-            Threat Actor Name: {selectedThreatActor?.name || "No Actor Selected"}
-          </h1>
-        </Card>
-
-        {/* Sophistication and Resource Level */}
-        <div className="flex justify-between space-x-6">
-          {/* Sophistication Level */}
-          <Card className="p-4 w-1/2">
-            <h2 className="text-xl font-semibold mb-2">Sophistication Level</h2>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              <span className="font-medium">{selectedThreatActor?.sophisticationLevel || "Not Available"}</span>
-            </div>
-            <div className="flex justify-center mt-4">
-              <PieChart width={250} height={250}>
-                <Pie
-                  data={[
-                    { name: "Selected", value: sophisticationValue },
-                    { name: "Remaining", value:(1 - sophisticationValue) },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={800}
-                >
-                  {COLORS.map((color, index) => (
-                    <Cell key={`cell-${index}`} fill={color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </div>
-          </Card>
-
-          {/* Resource Level */}
-          <Card className="p-4 w-1/2">
-            <h2 className="text-xl font-semibold mb-2">Resource Level</h2>
-            <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-              <span className="font-medium">{selectedThreatActor?.resourceLevel || "Not Available"}</span>
-            </div>
-
-            <div className="flex justify-center mt-4">
-              <PieChart width={250} height={250}>
-                <Pie
-                  data={[
-                    { name: "Selected", value: resourceValue },
-                    { name: "Remaining", value: 1 - resourceValue },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#82ca9d"
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={800}
-                >
-                  {COLORS.map((color, index) => (
-                    <Cell key={`cell-${index}`} fill={color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </div>
-          </Card>
-        </div>
+        {/* Threat Actors Selection */}
+        <Card className="p-4 bg-gray-700 text-white">
+  <h2 className="text-xl font-semibold mb-2">
+    Pick Threat Actors&nbsp;
+    <span className="text-sm">({selectedIds.length}/{maxSelect})</span>
+  </h2>
+  <div className="flex flex-wrap gap-4">
+    {threatActors.map(a => (
+      <label key={a.id} className="inline-flex items-center space-x-2">
+        <input
+          type="checkbox"
+          className="form-checkbox text-blue-600"
+          checked={selectedIds.includes(a.id)}
+          onChange={() =>
+            setSelectedIds(prev => {
+              const exists = prev.includes(a.id);
+              if (exists) return prev.filter(x => x !== a.id);
+              if (prev.length >= maxSelect) return prev;
+              return [...prev, a.id];
+            })
+          }
+        />
+        <span>{a.name}</span>
+      </label>
+    ))}
+  </div>
+</Card>
 
         {/* Weights Section with Sliders */}
         <Card className="p-4 mb-4 bg-gray-800">
           <h2 className="text-xl font-semibold mb-4 text-center text-white">Weight Adjustment</h2>
-          
+
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
               <span className="text-white">Sophistication Weight (w1): <span className="font-bold text-blue-400">{w1.toFixed(2)}</span></span>
               <span className="text-white">Resource Weight (w2): <span className="font-bold text-green-400">{w2.toFixed(2)}</span></span>
             </div>
-            
+
             <div className="mb-2">
               <label className="block text-sm text-gray-300 mb-1">
                 Sophistication vs Resource Weight (w1 = {w1.toFixed(2)}, w2 = {w2.toFixed(2)})
@@ -560,251 +445,24 @@ function HomeContent() {
           </div>
         </Card>
 
-        {/* Threat Ability Calculation */}
-        <Card className="p-4 mb-8 text-center bg-red-700">
-          <h2 className="text-xl font-semibold">Threat Ability (TA)</h2>
-          <p className="text-white text-lg mb-2">
-            {sophisticationValue.toFixed(2)} × {w1.toFixed(2)} + {resourceValue.toFixed(2)} × {w2.toFixed(2)}
-          </p>
-          <p className="text-white text-2xl font-bold mt-2">{threatAbility.toFixed(2)}</p>
-        </Card>
 
-        {/* Motivation Analysis and Goals Analysis */}
-        <div className="flex justify-between space-x-8 mb-8">
-          {/* Motivation Analysis */}
-          <Card className="p-4 flex-1 bg-gray-800">
-            <h2 className="text-xl font-semibold mb-4 text-white">Motivation Analysis</h2>
-            
-            {selectedThreatActor?.motivations && selectedThreatActor.motivations.length > 0 ? (
-              <div className="space-y-4">
-                {selectedThreatActor.motivations.map((motivation, index) => {
-                  const currentWeight = motivationWeights[motivation.id] !== undefined ? motivationWeights[motivation.id] : motivation.weight;
-                  const currentRelevance = motivationRelevanceLevels[motivation.id] || motivation.relevanceLevel;
-                  const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
-                  
-                  return (
-                    <div key={motivation.id} className="p-4 bg-gray-700 rounded-md">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white">{motivation.name}</span>
-                        <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
-                      </div>
-                      
-                      {/* Relevance Level Selector */}
-                      <div className="mb-3">
-                        <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
-                        <Select 
-                          onValueChange={(value) => handleMotivationRelevanceChange(motivation.id, value)} 
-                          value={currentRelevance}
-                        >
-                          <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.keys(RELEVANCE_LEVELS).map((level) => (
-                              <SelectItem key={level} value={level}>
-                                {level} ({RELEVANCE_LEVELS[level]})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      {/* Weight Slider */}
-                      <div>
-                        <label className="block text-sm text-gray-300 mb-1">
-                          Weight: {currentWeight.toFixed(3)}
-                        </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={currentWeight * 100}
-                          onChange={(e) => handleMotivationWeightChange(motivation.id, Number(e.target.value))}
-                          className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-gray-400">No motivations available</div>
-            )}
-
-            {/* Total Motivation Score */}
-            <Card className="p-4 text-center bg-gray-900 mt-4">
-              <h3 className="text-lg text-white font-semibold">Total Motivation Score</h3>
-              <p className="text-white text-2xl font-bold mt-2">{motivationScore.toFixed(3)}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Sum of weights: {selectedThreatActor ? 
-                  Object.values(motivationWeights).reduce((sum, weight) => sum + weight, 0).toFixed(3) : 
-                  '0.000'
-                }
-              </p>
-            </Card>
-          </Card>
-
-          {/* Goals Analysis */}
-          <Card className="p-4 flex-1 bg-gray-800">
-            <h2 className="text-xl font-semibold mb-4 text-white">Goals Analysis</h2>
-
-            {selectedThreatActor?.goals && selectedThreatActor.goals.length > 0 ? (
-              <div className="space-y-4">
-                {selectedThreatActor.goals.map((goal, index) => {
-                  const currentWeight = goalWeights[goal.id] !== undefined ? goalWeights[goal.id] : goal.weight;
-                  const currentRelevance = goalRelevanceLevels[goal.id] || goal.relevanceLevel;
-                  const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
-                  
-                  return (
-                    <div key={goal.id} className="p-4 bg-gray-700 rounded-md">
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white">{goal.name}</span>
-                        <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
-                      </div>
-                      
-                      {/* Relevance Level Selector */}
-                      <div className="mb-3">
-                        <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
-                        <Select 
-                          onValueChange={(value) => handleGoalRelevanceChange(goal.id, value)} 
-                          value={currentRelevance}
-                        >
-                          <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.keys(RELEVANCE_LEVELS).map((level) => (
-                              <SelectItem key={level} value={level}>
-                                {level} ({RELEVANCE_LEVELS[level]})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      {/* Weight Slider */}
-                      <div>
-                        <label className="block text-sm text-gray-300 mb-1">
-                          Weight: {currentWeight.toFixed(3)}
-                        </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          value={currentWeight * 100}
-                          onChange={(e) => handleGoalWeightChange(goal.id, Number(e.target.value))}
-                          className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-gray-400">No goals available</div>
-            )}
-
-            {/* Total Goal Score */}
-            <Card className="p-4 text-center bg-gray-900 mt-4">
-              <h3 className="text-lg text-white font-semibold">Total Goal Score</h3>
-              <p className="text-white text-2xl font-bold mt-2">{goalScore.toFixed(3)}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Sum of weights: {selectedThreatActor ? 
-                  Object.values(goalWeights).reduce((sum, weight) => sum + weight, 0).toFixed(3) : 
-                  '0.000'
-                }
-              </p>
-            </Card>
-          </Card>
-        </div>
-
-        {/* Location and Sector Match Row */}
-        <div className="flex justify-between space-x-8 mb-8">
-          {/* Location Match */}
-          <Card className="p-4 flex-1">
-            <h2 className="text-xl font-semibold mb-2">Location Match</h2>
-
-            {/* Organization Location */}
-            <div className="mb-4">
-              <h3 className="text-lg">Organization Location</h3>
-              <Select onValueChange={setOrgLocation} value={orgLocation}>
-                <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
-                  <SelectValue placeholder="Select Location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCATIONS.map((location) => (
-                    <SelectItem key={location} value={location}>
-                      {location}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Threat Actor Location */}
-            <div className="mb-4">
-              <h3 className="text-lg">Threat Actor Location</h3>
-              <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-                <span className="font-medium">{selectedThreatActor?.location || "Not Available"}</span>
-              </div>
-            </div>
-
-            {/* Bar Chart for Location Match */}
-            <BarChart width={250} height={200} data={[{ name: "Location Match", score: locationMatchScore }]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 1]} />
-              <Bar dataKey="score" fill="#8884d8" />
-            </BarChart>
-          </Card>
-
-          {/* Sector Match */}
-          <Card className="p-4 flex-1">
-            <h2 className="text-xl font-semibold mb-2">Sector Match</h2>
-
-            {/* Organization Sector */}
-            <div className="mb-4">
-              <h3 className="text-lg">Organization Sector</h3>
-              <Select onValueChange={setOrgSector} value={orgSector}>
-                <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
-                  <SelectValue placeholder="Select Sector" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SECTORS.map((sector) => (
-                    <SelectItem key={sector} value={sector}>
-                      {sector}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Threat Actor Sector */}
-            <div className="mb-4">
-              <h3 className="text-lg">Threat Actor Sector</h3>
-              <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
-                <span className="font-medium">{selectedThreatActor?.sector || "Not Available"}</span>
-              </div>
-            </div>
-
-            {/* Bar Chart for Sector Match */}
-            <BarChart width={250} height={200} data={[{ name: "Sector Match", score: sectorMatchScore }]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 1]} />
-              <Bar dataKey="score" fill="#82ca9d" />
-            </BarChart>
-          </Card>
-        </div>
-
-        {/* TEF Calculation Card */}
-        <Card className="p-4 mb-8 text-center bg-red-700">
-          <h2 className="text-xl font-semibold">Final TEF Calculation</h2>
-          <p className="text-white text-lg mb-2">
-            TA ({threatAbility.toFixed(3)}) × Motivation ({motivationScore.toFixed(3)}) × Goals ({goalScore.toFixed(3)}) × Location ({locationMatchScore}) × Sector ({sectorMatchScore})
-          </p>
-          <p className="text-white text-3xl font-bold">{tefValue.toFixed(6)}</p>
-        </Card>
+{/* pull selected threat actor card and display */}
+<div className="flex flex-col gap-8">
+  {selectedIds.map(id => {
+    const ta = detailMap[id];
+    if (!ta) return null;            // not loading
+    return (
+      <ThreatActorCard
+        key={id}
+        ta={ta}
+        orgLoc={orgLocation}
+        orgSec={orgSector}
+        w1={w1}
+        w2={w2}
+      />
+    );
+  })}
+</div>
       </div>
     </div>
   );
