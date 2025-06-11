@@ -120,7 +120,7 @@ function HomeContent() {
   const [motivationRelevanceLevels, setMotivationRelevanceLevels] = useState<{ [key: string]: string }>({});
   const [goalRelevanceLevels, setGoalRelevanceLevels] = useState<{ [key: string]: string }>({});
 
-  const { setTefValue } = useAppContext();
+  const { setTefValue, selectedThreatActorId, setSelectedThreatActorId } = useAppContext();
   const { user, logout, hasRole } = useAuth();
 
   // Initialize weights when threat actor changes
@@ -198,8 +198,9 @@ function HomeContent() {
 
   // Handle threat actor selection change
   const handleThreatActorChange = useCallback(async (threatActorId: string) => {
+    setSelectedThreatActorId(threatActorId);
     await loadThreatActorDetails(threatActorId);
-  }, [loadThreatActorDetails]);
+  }, [loadThreatActorDetails, setSelectedThreatActorId]);
 
   // Weight adjustment handlers
   const handleW1Change = (value: number) => {
@@ -435,11 +436,10 @@ function HomeContent() {
 
       {/* Main Content */}
       <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
-        {/* Threat Actor Selection */}
         {threatActors.length > 0 && (
           <Card className="p-4 bg-gray-800">
             <h2 className="text-xl font-semibold mb-2 text-white">Select Threat Actor</h2>
-            <Select onValueChange={handleThreatActorChange} value={selectedThreatActor?.id || ""}>
+            <Select onValueChange={handleThreatActorChange} value={selectedThreatActorId || ""}>
               <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
                 <SelectValue placeholder="Select Threat Actor" />
               </SelectTrigger>
@@ -454,6 +454,7 @@ function HomeContent() {
             {error && <div className="text-sm text-red-400 mt-2">{error}</div>}
           </Card>
         )}
+
 
         {/* Threat Actor Name */}
         <Card className="p-4 text-center bg-gray-800">

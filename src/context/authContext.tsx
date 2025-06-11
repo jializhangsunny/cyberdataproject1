@@ -8,6 +8,12 @@ interface User {
  email: string;
  type: string;
  name: string;
+ organization?: {
+    name: String;
+    location: String;
+    Sector: String;
+    id: String;
+ }
 }
 
 interface LoginCredentials {
