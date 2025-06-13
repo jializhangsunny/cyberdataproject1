@@ -182,6 +182,8 @@ function HomeContent() {
     fetchThreatActors();
   }, []);
 
+
+
   // Load detailed threat actor data
   const loadThreatActorDetails = useCallback(async (threatActorId: string) => {
     try {
@@ -311,6 +313,13 @@ function HomeContent() {
   useEffect(() => {
     setTefValue(tefValue);
   }, [tefValue, setTefValue]);
+
+  // Add this useEffect after the existing useEffect hooks in HomeContent
+  useEffect(() => {
+    if (selectedThreatActorId && threatActors.length > 0) {
+      loadThreatActorDetails(selectedThreatActorId);
+    }
+  }, [selectedThreatActorId, loadThreatActorDetails, threatActors.length]);
 
   // Loading state
   if (loading && threatActors.length === 0) {

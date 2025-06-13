@@ -18,7 +18,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // 创建 Provider
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [tefValue, setTefValue] = useState<number>(0); // 初始值为 2.5
+  const [tefValue, setTefValue] = useState<number>(0); // 初始值为 2.5 -> 0
   const [totalLef, settotalLef] = useState<number>(1); // 默认值为1
   const [totalRisk, setTotalRisk] = useState<number>(0); // 默认值为0
   
