@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAppContext } from "@/context/appcontext";
 
+import assetService from '../../services/assets'
+
 // Asset Information
 const ASSET = {
   id: 1,

@@ -10,7 +10,7 @@ import { useAuth } from "@/context/authContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Import your API service
-import threatActorService from '../services/threatActors'
+import threatActorService from '../services/threatActors';
 
 // TypeScript interfaces for getAll response
 interface ThreatActorSummary {
@@ -122,6 +122,11 @@ function HomeContent() {
 
   const { setTefValue, selectedThreatActorId, setSelectedThreatActorId } = useAppContext();
   const { user, logout, hasRole } = useAuth();
+
+  useEffect(() => {
+    setOrgLocation(user?.organization?.location || "U.S.");
+    setOrgSector(user?.organization?.sector || "Energy");
+  }, [user]);
 
   // Initialize weights when threat actor changes
   useEffect(() => {

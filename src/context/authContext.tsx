@@ -9,10 +9,10 @@ interface User {
  type: string;
  name: string;
  organization?: {
-    name: String;
-    location: String;
-    Sector: String;
-    id: String;
+    name: string;
+    location: string;
+    sector: string;
+    id: string;
  }
 }
 
