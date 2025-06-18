@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { PieChart, Pie, Cell, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { BarChart, Bar, LabelList, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useAppContext } from "@/context/appcontext";
 import { useAuth } from "@/context/authContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Check, X } from 'lucide-react';
 
 // Import your API service
 import threatActorService from '../services/threatActors';
@@ -98,6 +99,15 @@ const SECTORS = [
 ];
 
 const COLORS = ["#8884d8", "#82ca9d"];
+
+//add function match to show icon
+function MatchIcon({ matched }: { matched: boolean }) {
+  return matched ? (
+    <Check className="text-red-400 w-8 h-8" strokeWidth={3} />
+  ) : (
+    <X className="text-green-300 w-8 h-8" strokeWidth={3} />
+  );
+}
 
 function HomeContent() {
   // Backend data state
@@ -481,65 +491,94 @@ function HomeContent() {
         <div className="flex justify-between space-x-6">
           {/* Sophistication Level */}
           <Card className="p-4 w-1/2">
-            <h2 className="text-xl font-semibold mb-2">Sophistication Level</h2>
+            <h2 className="text-xl font-semibold">Sophistication Level</h2>
             <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
               <span className="font-medium">{selectedThreatActor?.sophisticationLevel || "Not Available"}</span>
             </div>
-            <div className="flex justify-center mt-4">
-              <PieChart width={250} height={250}>
-                <Pie
-                  data={[
-                    { name: "Selected", value: sophisticationValue },
-                    { name: "Remaining", value:(1 - sophisticationValue) },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={800}
-                >
-                  {COLORS.map((color, index) => (
-                    <Cell key={`cell-${index}`} fill={color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </div>
+           <div className="flex justify-center ">
+  <BarChart
+    width={450}
+    height={60}
+    data={[{
+      name: 'score',
+      value: sophisticationValue,
+      remain: 1 - sophisticationValue,
+    }]}
+    layout="vertical"
+    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+  >
+    <XAxis type="number" domain={[0, 1]} hide />
+    <YAxis type="category" dataKey="name" hide />
+    <Bar
+      dataKey="value"
+      stackId="a"
+      fill="#5b8df6"
+      isAnimationActive={false}
+      radius={[4, 0, 0, 4]}
+    >
+      <LabelList
+        dataKey="value"
+        position="center"
+        formatter={(v: number) => v.toFixed(3)}
+        fill="#fff"
+      />
+    </Bar>
+
+    <Bar
+      dataKey="remain"
+      stackId="a"
+      fill="#a4c4ff"
+      isAnimationActive={false}
+      radius={[0, 4, 4, 0]}
+    />
+  </BarChart>
+</div>
           </Card>
 
           {/* Resource Level */}
           <Card className="p-4 w-1/2">
-            <h2 className="text-xl font-semibold mb-2">Resource Level</h2>
+            <h2 className="text-xl font-semibold">Resource Level</h2>
             <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
               <span className="font-medium">{selectedThreatActor?.resourceLevel || "Not Available"}</span>
             </div>
+<div className="flex justify-center ">
+  <BarChart
+    width={450}
+    height={60}
+    data={[{
+      name: 'score',
+      value: resourceValue,
+      remain: 1 - resourceValue,
+    }]}
+    layout="vertical"
+    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+  >
+     <XAxis type="number" domain={[0, 1]} hide />
+    <YAxis type="category" dataKey="name" hide />
+    <Bar
+      dataKey="value"
+      stackId="a"
+      fill="#5b8df6"
+      isAnimationActive={false}
+      radius={[4, 0, 0, 4]}
+    >
+      <LabelList
+        dataKey="value"
+        position="center"
+        formatter={(v: number) => v.toFixed(3)}
+        fill="#fff"
+      />
+    </Bar>
 
-            <div className="flex justify-center mt-4">
-              <PieChart width={250} height={250}>
-                <Pie
-                  data={[
-                    { name: "Selected", value: resourceValue },
-                    { name: "Remaining", value: 1 - resourceValue },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#82ca9d"
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={800}
-                >
-                  {COLORS.map((color, index) => (
-                    <Cell key={`cell-${index}`} fill={color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </div>
+    <Bar
+      dataKey="remain"
+      stackId="a"
+      fill="#a4c4ff"
+      isAnimationActive={false}
+      radius={[0, 4, 4, 0]}
+    />
+  </BarChart>
+</div>
           </Card>
         </div>
 
@@ -764,13 +803,17 @@ function HomeContent() {
               </div>
             </div>
 
-            {/* Bar Chart for Location Match */}
-            <BarChart width={250} height={200} data={[{ name: "Location Match", score: locationMatchScore }]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 1]} />
-              <Bar dataKey="score" fill="#8884d8" />
-            </BarChart>
+            {/* UI for Location Match */}
+            <div className="flex items-center justify-center space-x-3 mt-2">
+  <MatchIcon matched={locationMatchScore === 1} />
+              <span
+    className={`text-2xl font-semibold ${
+      locationMatchScore === 1 ? 'text-red-500' : 'text-green-500'
+    }`}
+  >
+    {locationMatchScore}
+  </span>
+</div>
           </Card>
 
           {/* Sector Match */}
@@ -803,12 +846,15 @@ function HomeContent() {
             </div>
 
             {/* Bar Chart for Sector Match */}
-            <BarChart width={250} height={200} data={[{ name: "Sector Match", score: sectorMatchScore }]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 1]} />
-              <Bar dataKey="score" fill="#82ca9d" />
-            </BarChart>
+             <div className="flex items-center justify-center space-x-3 mt-2">
+  <MatchIcon matched={sectorMatchScore === 1} />
+              <span
+    className={`text-2xl font-semibold ${
+      sectorMatchScore === 1 ? 'text-red-500' : 'text-green-500'}`}
+  >
+    {sectorMatchScore}
+  </span>
+</div>
           </Card>
         </div>
 
