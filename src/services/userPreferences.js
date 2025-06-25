@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-const baseUrl = 'http://localhost:5000/api/user-preferences'
-// const baseUrl = 'https://rocsi-production.up.railway.app/api/userPreferences'
+// const baseUrl = 'http://localhost:5000/api/user-preferences'
+const baseUrl = 'https://rocsi-production.up.railway.app/api/user-preferences'
 
 // Get user preferences for specific threat actor
 const getUserPreferences = async (userId, threatActorId) => {
