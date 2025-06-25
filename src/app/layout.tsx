@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/context/appcontext'  // Changed from AppContextProvider to AppProvider
 import { AuthProvider } from '@/context/authContext'
+import { UserPreferencesProvider } from '@/context/userPreferencesContext'
+import { User } from 'lucide-react'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,7 +23,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <AppProvider>
-            {children}
+            <UserPreferencesProvider>
+              {children}
+            </UserPreferencesProvider>
           </AppProvider>
         </AuthProvider>
       </body>
