@@ -49,11 +49,13 @@ export default function RiskAnalysis() {
     loadAssets();
   }, [user]);
 
-  const handleSelect = (index: number, value: string) => {
-    const newSelections = [...selections];
-    newSelections[index] = value;
-    setSelections(newSelections);
-  };
+ const handleSelect = (index: number, value: string) => {
+  setSelections(prev => {
+    const copy = prev.map(v => (v === value ? "" : v));
+   copy[index] = value;
+    return copy;
+  });
+};
 
   const getValue = (label: string) => {
     const item = LOSS_TYPES.find((t) => t.label === label);
@@ -218,13 +220,14 @@ export default function RiskAnalysis() {
                       <SelectTrigger className="w-60 bg-white text-black">
                         <SelectValue placeholder="Select loss type" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {LOSS_TYPES.map((type) => (
-                          <SelectItem key={type.label} value={type.label}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                     <SelectContent>
+                       {LOSS_TYPES.filter(t =>
+      !selections.includes(t.label) || selections[i] === t.label)
+                           .map(t => (
+                               <SelectItem key={t.label} value={t.label}>{t.label}
+                               </SelectItem>
+                           ))}
+                     </SelectContent>
                     </Select>
                   </td>
                   <td className="py-2 pl-4">
