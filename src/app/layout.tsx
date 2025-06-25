@@ -3,8 +3,11 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/context/appcontext'  // Changed from AppContextProvider to AppProvider
 import { AuthProvider } from '@/context/authContext'
-import "./globals.css";
 import FloatingHelp from "@/components/FloatingHelp";
+
+import { UserPreferencesProvider } from '@/context/userPreferencesContext'
+import { User } from 'lucide-react'
+
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -25,6 +28,9 @@ export default function RootLayout({
           <AppProvider>
             {children}
             <FloatingHelp />
+            <UserPreferencesProvider>
+              {children}
+            </UserPreferencesProvider>
           </AppProvider>
         </AuthProvider>
       </body>
