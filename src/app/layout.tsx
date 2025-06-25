@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/context/appcontext'  // Changed from AppContextProvider to AppProvider
 import { AuthProvider } from '@/context/authContext'
+import "./globals.css";
+import FloatingHelp from "@/components/FloatingHelp";
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,6 +24,7 @@ export default function RootLayout({
         <AuthProvider>
           <AppProvider>
             {children}
+            <FloatingHelp />
           </AppProvider>
         </AuthProvider>
       </body>
