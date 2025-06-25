@@ -8,6 +8,8 @@ import FloatingHelp from "@/components/FloatingHelp";
 import { UserPreferencesProvider } from '@/context/userPreferencesContext'
 import { User } from 'lucide-react'
 
+import FloatingHelp from "@/components/FloatingHelp";
+
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -31,6 +33,8 @@ export default function RootLayout({
             <UserPreferencesProvider>
               {children}
             </UserPreferencesProvider>
+            {children}
+            <FloatingHelp />
           </AppProvider>
         </AuthProvider>
       </body>
