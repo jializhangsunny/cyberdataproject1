@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { BarChart, Bar, LabelList, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
@@ -63,6 +63,15 @@ interface DetailedThreatActor {
   exploits: DetailedExploit[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface Motivation {
+  motivationId: {
+    id: string,
+    name: string
+  },
+  weight: number,
+  relevanceLevel: string
 }
 
 const SOPHISTICATION_LEVELS: { [key: string]: number } = {
@@ -135,10 +144,12 @@ function HomeContent() {
     loadAllUserPreferences,
     sophisticationWeight,
     resourceWeight,
-    motivationAnalysis: contextMotivationAnalysis,
+    motivationAnalysis,
     goalsAnalysis: contextGoalsAnalysis,
     isFirstTimeUser
   } = useUserPreferences();
+
+  const isSaving = useRef(false);
 
   const { setTefValue, selectedThreatActorId, setSelectedThreatActorId } = useAppContext();
   const { user, logout, hasRole } = useAuth();
@@ -165,57 +176,12 @@ function HomeContent() {
   const [localMotivationRelevanceLevels, setLocalMotivationRelevanceLevels] = useState<{ [key: string]: string }>({});
   const [localGoalRelevanceLevels, setLocalGoalRelevanceLevels] = useState<{ [key: string]: string }>({});
 
-  // Update local state when preferences load
-  useEffect(() => {
-    if (preferences) {
-      setLocalW1(sophisticationWeight);
-      setLocalW2(resourceWeight);
-      
-      // Initialize local motivation weights and relevance levels
-      const motivationWeights: { [key: string]: number } = {};
-      const motivationRelevance: { [key: string]: string } = {};
-      contextMotivationAnalysis.forEach(motivation => {
-        motivationWeights[motivation.motivationId] = motivation.weight;
-        motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
-      });
-      setLocalMotivationWeights(motivationWeights);
-      setLocalMotivationRelevanceLevels(motivationRelevance);
-
-      // Initialize local goal weights and relevance levels
-      const goalWeights: { [key: string]: number } = {};
-      const goalRelevance: { [key: string]: string } = {};
-      contextGoalsAnalysis.forEach(goal => {
-        goalWeights[goal.goalId] = goal.weight;
-        goalRelevance[goal.goalId] = goal.relevanceLevel;
-      });
-      setLocalGoalWeights(goalWeights);
-      setLocalGoalRelevanceLevels(goalRelevance);
-    } else {
-      // Reset to defaults when no preferences
-      setLocalW1(0.5);
-      setLocalW2(0.5);
-      setLocalMotivationWeights({});
-      setLocalGoalWeights({});
-      setLocalMotivationRelevanceLevels({});
-      setLocalGoalRelevanceLevels({});
-    }
-  }, [preferences]); // Removed all computed values from dependencies
 
   useEffect(() => {
     setOrgLocation(user?.organization?.location || "U.S.");
     setOrgSector(user?.organization?.sector || "Energy");
   }, [user]);
 
-  // // Show first-time user message
-  // useEffect(() => {
-  //   // if (!preferences) {
-  //   //   console.log('first time user');
-  //   // }
-  //   if (isFirstTimeUser()) {
-  //     console.log('First time user - could show tutorial');
-  //     // You could show a modal or tutorial here
-  //   }
-  // }, [isFirstTimeUser]);
   useEffect(() => {
     // Only check after we've loaded all preferences and haven't checked yet
     if (user?.id && !preferencesLoading && hasLoadedAllPreferences && !hasCheckedFirstTime) {
@@ -224,47 +190,116 @@ function HomeContent() {
       
       if (isFirstTime) {
         setShowWelcomeBanner(true);
-        console.log('First time user - showing welcome banner');
       }
       setHasCheckedFirstTime(true);
     }
   }, [user?.id, preferencesLoading, hasLoadedAllPreferences, isFirstTimeUser, hasCheckedFirstTime]);
 
-  // Initialize weights when threat actor changes
+  // useEffect(() => {
+  //   if (!isSaving.current && preferences && selectedThreatActor) {
+  //     // Only update if preferences are for the current threat actor
+  //     console.log(motivationAnalysis)
+  //     if (preferences.threatActorId === selectedThreatActor.id && 
+  //         motivationAnalysis.length > 0 && 
+  //         contextGoalsAnalysis.length > 0) {
+        
+  //       console.log('Preferences loaded for current threat actor, syncing local state');
+        
+  //       // Update local state with the loaded preference values
+  //       const motivationWeights: { [key: string]: number } = {};
+  //       const motivationRelevance: { [key: string]: string } = {};
+  //       motivationAnalysis.forEach(motivation => {
+  //         motivationWeights[motivation.motivationId] = motivation.weight;
+  //         motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
+  //       });
+        
+  //       const goalWeights: { [key: string]: number } = {};
+  //       const goalRelevance: { [key: string]: string } = {};
+  //       contextGoalsAnalysis.forEach(goal => {
+  //         goalWeights[goal.goalId] = goal.weight;
+  //         goalRelevance[goal.goalId] = goal.relevanceLevel;
+  //       });
+
+  //       console.log(motivationAnalysis)
+        
+  //       setLocalMotivationWeights(motivationWeights);
+  //       setLocalGoalWeights(goalWeights);
+  //       setLocalMotivationRelevanceLevels(motivationRelevance);
+  //       setLocalGoalRelevanceLevels(goalRelevance);
+  //       setLocalW1(sophisticationWeight);
+  //       setLocalW2(resourceWeight);
+  //     }
+  //   }
+  // }, [preferences?.updatedAt, selectedThreatActor?.id]);
+
+  // Replace your useEffect with this debug version to see what's failing:
+
+// Replace your debug useEffect with this fixed version:
+
   useEffect(() => {
-    if (selectedThreatActor) {
-      // Initialize motivation weights using backend values if no preferences exist
-      const initialMotivationWeights: { [key: string]: number } = {};
-      const initialMotivationRelevance: { [key: string]: string } = {};
-      
-      if (selectedThreatActor.motivations.length > 0) {
-        selectedThreatActor.motivations.forEach(motivation => {
-          // Use preference value if exists, otherwise use backend value
-          const prefMotivation = contextMotivationAnalysis.find(m => m.motivationId === motivation.id);
-          initialMotivationWeights[motivation.id] = prefMotivation?.weight ?? motivation.weight;
-          initialMotivationRelevance[motivation.id] = prefMotivation?.relevanceLevel ?? motivation.relevanceLevel;
+    if (!isSaving.current && preferences && selectedThreatActor) {
+      // Fix: Use threatActorId.id instead of threatActorId
+      if (preferences.threatActorId?.id === selectedThreatActor.id && 
+          motivationAnalysis.length > 0 && 
+          contextGoalsAnalysis.length > 0) {
+        
+        console.log('Preferences loaded for current threat actor, syncing local state');
+        
+        // Update local state with the loaded preference values
+        const motivationWeights: { [key: string]: number } = {};
+        const motivationRelevance: { [key: string]: string } = {};
+        motivationAnalysis.forEach((motivation: any) => {
+          motivationWeights[motivation.motivationId] = motivation.weight;
+          motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
+          console.log(`Setting motivation ${motivation.motivationId}: weight=${motivation.weight}, relevance=${motivation.relevanceLevel}`);
         });
-      }
-      
-      // Initialize goal weights using backend values if no preferences exist
-      const initialGoalWeights: { [key: string]: number } = {};
-      const initialGoalRelevance: { [key: string]: string } = {};
-      
-      if (selectedThreatActor.goals.length > 0) {
-        selectedThreatActor.goals.forEach(goal => {
-          // Use preference value if exists, otherwise use backend value
-          const prefGoal = contextGoalsAnalysis.find(g => g.goalId === goal.id);
-          initialGoalWeights[goal.id] = prefGoal?.weight ?? goal.weight;
-          initialGoalRelevance[goal.id] = prefGoal?.relevanceLevel ?? goal.relevanceLevel;
+        
+        const goalWeights: { [key: string]: number } = {};
+        const goalRelevance: { [key: string]: string } = {};
+        contextGoalsAnalysis.forEach((goal: any) => {
+          goalWeights[goal.goalId] = goal.weight;
+          goalRelevance[goal.goalId] = goal.relevanceLevel;
+          console.log(`Setting goal ${goal.goalId}: weight=${goal.weight}, relevance=${goal.relevanceLevel}`);
         });
+        
+        setLocalMotivationWeights(motivationWeights);
+        setLocalGoalWeights(goalWeights);
+        setLocalMotivationRelevanceLevels(motivationRelevance);
+        setLocalGoalRelevanceLevels(goalRelevance);
+        setLocalW1(sophisticationWeight);
+        setLocalW2(resourceWeight);
       }
-      
-      setLocalMotivationWeights(initialMotivationWeights);
-      setLocalGoalWeights(initialGoalWeights);
-      setLocalMotivationRelevanceLevels(initialMotivationRelevance);
-      setLocalGoalRelevanceLevels(initialGoalRelevance);
     }
-  }, [selectedThreatActor, contextMotivationAnalysis, contextGoalsAnalysis]);
+  }, [preferences?.updatedAt, selectedThreatActor?.id, motivationAnalysis.length, contextGoalsAnalysis.length]);
+
+  // Separate effect for when preferences are loaded/updated
+  useEffect(() => {
+    if (preferences && motivationAnalysis.length > 0 && contextGoalsAnalysis.length > 0 && !isSaving.current) {
+      // Update local state with the loaded preference values
+      const motivationWeights: { [key: string]: number } = {};
+      const motivationRelevance: { [key: string]: string } = {};
+      motivationAnalysis.forEach((motivation: any) => {
+        motivationWeights[motivation.motivationId] = motivation.weight;
+        motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
+      });
+      
+      const goalWeights: { [key: string]: number } = {};
+      const goalRelevance: { [key: string]: string } = {};
+      contextGoalsAnalysis.forEach((goal: any) => {
+        goalWeights[goal.goalId] = goal.weight;
+        goalRelevance[goal.goalId] = goal.relevanceLevel;
+      });
+      
+      setLocalMotivationWeights(motivationWeights);
+      setLocalGoalWeights(goalWeights);
+      setLocalMotivationRelevanceLevels(motivationRelevance);
+      setLocalGoalRelevanceLevels(goalRelevance);
+      setLocalW1(sophisticationWeight);
+      setLocalW2(resourceWeight);
+    }
+  }, [preferences?.updatedAt]); // Only when preferences actually change
+
+
 
   // Fetch all threat actors on component mount
   useEffect(() => {
@@ -395,86 +430,53 @@ function HomeContent() {
     }));
   };
 
-  // Save all preferences to context/backend for current threat actor
-  // const handleSavePreferences = async () => {
-  //   if (!selectedThreatActor || !user?.id) return;
+  // Update the save handler to prevent reset during save
+const handleSavePreferences = async () => {
+  if (!selectedThreatActor || !user?.id) return;
+  
+  setSaveLoading(true);
+  isSaving.current = true; // Prevent useEffect from resetting during save
+  
+  try {
+    // Prepare motivation analysis data
+    const motivationAnalysis = selectedThreatActor.motivations.map(motivation => ({
+      motivationId: motivation.id,
+      relevanceLevel: localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel,
+      weight: localMotivationWeights[motivation.id] !== undefined ? localMotivationWeights[motivation.id] : motivation.weight
+    }));
+
+    // Prepare goals analysis data
+    const goalsAnalysis = selectedThreatActor.goals.map(goal => ({
+      goalId: goal.id,
+      relevanceLevel: localGoalRelevanceLevels[goal.id] || goal.relevanceLevel,
+      weight: localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight
+    }));
+
+    // Update preferences for this specific threat actor
+    await updatePreferences({
+      sophisticationResourceWeights: {
+        sophisticationWeight: localW1,
+        resourceWeight: localW2
+      },
+      motivationAnalysis,
+      goalsAnalysis
+    });
+
+    // Hide welcome banner after successful save (user is no longer first-time)
+    setShowWelcomeBanner(false);
     
-  //   setSaveLoading(true);
-  //   try {
-  //     // Prepare motivation analysis data
-  //     const motivationAnalysis = selectedThreatActor.motivations.map(motivation => ({
-  //       motivationId: motivation.id,
-  //       relevanceLevel: localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel,
-  //       weight: localMotivationWeights[motivation.id] !== undefined ? localMotivationWeights[motivation.id] : motivation.weight
-  //     }));
-
-  //     // Prepare goals analysis data
-  //     const goalsAnalysis = selectedThreatActor.goals.map(goal => ({
-  //       goalId: goal.id,
-  //       relevanceLevel: localGoalRelevanceLevels[goal.id] || goal.relevanceLevel,
-  //       weight: localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight
-  //     }));
-
-  //     // Update preferences for this specific threat actor
-  //     await updatePreferences({
-  //       sophisticationResourceWeights: {
-  //         sophisticationWeight: localW1,
-  //         resourceWeight: localW2
-  //       },
-  //       motivationAnalysis,
-  //       goalsAnalysis
-  //     });
-
-  //     alert('Preferences saved successfully for ' + selectedThreatActor.name + '!');
-  //   } catch (err) {
-  //     console.error('Failed to save preferences:', err);
-  //     alert('Failed to save preferences. Please try again.');
-  //   } finally {
-  //     setSaveLoading(false);
-  //   }
-  // };
-
-  // Save all preferences to context/backend for current threat actor
-  const handleSavePreferences = async () => {
-    if (!selectedThreatActor || !user?.id) return;
-    
-    setSaveLoading(true);
-    try {
-      // Prepare motivation analysis data
-      const motivationAnalysis = selectedThreatActor.motivations.map(motivation => ({
-        motivationId: motivation.id,
-        relevanceLevel: localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel,
-        weight: localMotivationWeights[motivation.id] !== undefined ? localMotivationWeights[motivation.id] : motivation.weight
-      }));
-
-      // Prepare goals analysis data
-      const goalsAnalysis = selectedThreatActor.goals.map(goal => ({
-        goalId: goal.id,
-        relevanceLevel: localGoalRelevanceLevels[goal.id] || goal.relevanceLevel,
-        weight: localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight
-      }));
-
-      // Update preferences for this specific threat actor
-      await updatePreferences({
-        sophisticationResourceWeights: {
-          sophisticationWeight: localW1,
-          resourceWeight: localW2
-        },
-        motivationAnalysis,
-        goalsAnalysis
-      });
-
-      // Hide welcome banner after successful save (user is no longer first-time)
-      setShowWelcomeBanner(false);
-      
-      alert('Preferences saved successfully for ' + selectedThreatActor.name + '!');
-    } catch (err) {
-      console.error('Failed to save preferences:', err);
-      alert('Failed to save preferences. Please try again.');
-    } finally {
-      setSaveLoading(false);
-    }
-  };
+    alert('Preferences saved successfully for ' + selectedThreatActor.name + '!');
+  } catch (err) {
+    console.error('Failed to save preferences:', err);
+    alert('Failed to save preferences. Please try again.');
+  } finally {
+    setSaveLoading(false);
+    // Small delay to ensure context has updated before allowing resets
+    setTimeout(() => {
+      isSaving.current = false;
+    }, 100);
+  }
+};
 
   // Calculations using local state
   const sophisticationValue = selectedThreatActor 
@@ -515,14 +517,6 @@ function HomeContent() {
   useEffect(() => {
     setTefValue(tefValue);
   }, [tefValue, setTefValue]);
-
-  // Add this useEffect after the existing useEffect hooks in HomeContent
-  // This is redundant now - removing it
-  // useEffect(() => {
-  //   if (selectedThreatActorId && threatActors.length > 0) {
-  //     loadThreatActorDetails(selectedThreatActorId);
-  //   }
-  // }, [selectedThreatActorId, loadThreatActorDetails, threatActors.length]);
 
   // Loading state
   if ((loading && threatActors.length === 0) || preferencesLoading) {
@@ -573,7 +567,6 @@ function HomeContent() {
             <button 
               onClick={() => {
                 setShowWelcomeBanner(false);
-                console.log('Welcome banner dismissed manually');
               }}
               className="bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 flex-shrink-0 ml-4"
               title="Dismiss welcome message"
@@ -851,17 +844,78 @@ function HomeContent() {
           <Card className="p-4 flex-1 bg-gray-800">
             <h2 className="text-xl font-semibold mb-4 text-white">Motivation Analysis</h2>
             
-            {selectedThreatActor?.motivations && selectedThreatActor.motivations.length > 0 ? (
+            {motivationAnalysis.length === 0 ? (
+              // NO PREFERENCES - Show threat actor motivations with defaults
+              selectedThreatActor?.motivations && selectedThreatActor.motivations.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedThreatActor.motivations.map((motivation, index) => {
+                    const motivationIdStr = String(motivation.id);
+                    const defaultWeight = 1.0 / selectedThreatActor.motivations.length;
+                    const currentWeight = localMotivationWeights[motivationIdStr] !== undefined ? localMotivationWeights[motivationIdStr] : defaultWeight;
+                    const currentRelevance = localMotivationRelevanceLevels[motivationIdStr] || "Moderate";
+                    const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
+                    
+                    return (
+                      <div key={motivation.id} className="p-4 bg-gray-700 rounded-md">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-medium text-white">{motivation.name}</span>
+                          <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
+                        </div>
+                        
+                        {/* Relevance Level Selector */}
+                        <div className="mb-3">
+                          <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
+                          <Select 
+                            onValueChange={(value) => handleMotivationRelevanceChange(motivationIdStr, value)} 
+                            value={currentRelevance}
+                          >
+                            <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.keys(RELEVANCE_LEVELS).map((level) => (
+                                <SelectItem key={level} value={level}>
+                                  {level} ({RELEVANCE_LEVELS[level]})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {/* Weight Slider */}
+                        <div>
+                          <label className="block text-sm text-gray-300 mb-1">
+                            Weight: {currentWeight.toFixed(3)} (Slider: {(currentWeight * 100).toFixed(0)})
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={currentWeight * 100}
+                            onChange={(e) => handleMotivationWeightChange(motivationIdStr, Number(e.target.value))}
+                            className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-gray-400">No motivations available</div>
+              )
+            ) : (
+              // HAS PREFERENCES - Show motivationAnalysis directly
               <div className="space-y-4">
-                {selectedThreatActor.motivations.map((motivation, index) => {
-                  const currentWeight = localMotivationWeights[motivation.id] !== undefined ? localMotivationWeights[motivation.id] : motivation.weight;
-                  const currentRelevance = localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel;
+                {motivationAnalysis.map((motivation: Motivation, index: number) => {
+                  const motivationIdStr = String(motivation.motivationId.id);
+                  const currentWeight = localMotivationWeights[motivationIdStr] !== undefined ? localMotivationWeights[motivationIdStr] : motivation.weight;
+                  const currentRelevance = localMotivationRelevanceLevels[motivationIdStr] || motivation.relevanceLevel;
                   const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
                   
                   return (
-                    <div key={motivation.id} className="p-4 bg-gray-700 rounded-md">
+                    <div key={motivation.motivationId.id} className="p-4 bg-gray-700 rounded-md">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white">{motivation.name}</span>
+                        <span className="font-medium text-white">{motivation.motivationId.name}</span>
                         <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
                       </div>
                       
@@ -869,7 +923,7 @@ function HomeContent() {
                       <div className="mb-3">
                         <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
                         <Select 
-                          onValueChange={(value) => handleMotivationRelevanceChange(motivation.id, value)} 
+                          onValueChange={(value) => handleMotivationRelevanceChange(motivationIdStr, value)} 
                           value={currentRelevance}
                         >
                           <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
@@ -888,14 +942,14 @@ function HomeContent() {
                       {/* Weight Slider */}
                       <div>
                         <label className="block text-sm text-gray-300 mb-1">
-                          Weight: {currentWeight.toFixed(3)}
+                          Weight: {currentWeight.toFixed(3)} (Slider: {(currentWeight * 100).toFixed(0)})
                         </label>
                         <input
                           type="range"
                           min="0"
                           max="100"
                           value={currentWeight * 100}
-                          onChange={(e) => handleMotivationWeightChange(motivation.id, Number(e.target.value))}
+                          onChange={(e) => handleMotivationWeightChange(motivationIdStr, Number(e.target.value))}
                           className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
                         />
                       </div>
@@ -903,20 +957,12 @@ function HomeContent() {
                   );
                 })}
               </div>
-            ) : (
-              <div className="text-gray-400">No motivations available</div>
             )}
 
             {/* Total Motivation Score */}
             <Card className="p-4 text-center bg-gray-900 mt-4">
               <h3 className="text-lg text-white font-semibold">Total Motivation Score</h3>
               <p className="text-white text-2xl font-bold mt-2">{motivationScore.toFixed(3)}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Sum of weights: {selectedThreatActor ? 
-                  Object.values(localMotivationWeights).reduce((sum, weight) => sum + weight, 0).toFixed(3) : 
-                  '0.000'
-                }
-              </p>
             </Card>
           </Card>
 
@@ -924,17 +970,78 @@ function HomeContent() {
           <Card className="p-4 flex-1 bg-gray-800">
             <h2 className="text-xl font-semibold mb-4 text-white">Goals Analysis</h2>
 
-            {selectedThreatActor?.goals && selectedThreatActor.goals.length > 0 ? (
+            {contextGoalsAnalysis.length === 0 ? (
+              // NO PREFERENCES - Show threat actor goals with defaults
+              selectedThreatActor?.goals && selectedThreatActor.goals.length > 0 ? (
+                <div className="space-y-4">
+                  {selectedThreatActor.goals.map((goal, index) => {
+                    const goalIdStr = String(goal.id);
+                    const defaultWeight = 1.0 / selectedThreatActor.goals.length;
+                    const currentWeight = localGoalWeights[goalIdStr] !== undefined ? localGoalWeights[goalIdStr] : defaultWeight;
+                    const currentRelevance = localGoalRelevanceLevels[goalIdStr] || "Moderate";
+                    const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
+                    
+                    return (
+                      <div key={goal.id} className="p-4 bg-gray-700 rounded-md">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-medium text-white">{goal.name}</span>
+                          <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
+                        </div>
+                        
+                        {/* Relevance Level Selector */}
+                        <div className="mb-3">
+                          <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
+                          <Select 
+                            onValueChange={(value) => handleGoalRelevanceChange(goalIdStr, value)} 
+                            value={currentRelevance}
+                          >
+                            <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.keys(RELEVANCE_LEVELS).map((level) => (
+                                <SelectItem key={level} value={level}>
+                                  {level} ({RELEVANCE_LEVELS[level]})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {/* Weight Slider */}
+                        <div>
+                          <label className="block text-sm text-gray-300 mb-1">
+                            Weight: {currentWeight.toFixed(3)}
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={currentWeight * 100}
+                            onChange={(e) => handleGoalWeightChange(goalIdStr, Number(e.target.value))}
+                            className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-gray-400">No goals available</div>
+              )
+            ) : (
+              // HAS PREFERENCES - Show contextGoalsAnalysis directly
               <div className="space-y-4">
-                {selectedThreatActor.goals.map((goal, index) => {
-                  const currentWeight = localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight;
-                  const currentRelevance = localGoalRelevanceLevels[goal.id] || goal.relevanceLevel;
+                {contextGoalsAnalysis.map((goal: any, index: number) => {
+                  const goalIdStr = String(goal.goalId.id);
+                  const currentWeight = localGoalWeights[goalIdStr] !== undefined ? localGoalWeights[goalIdStr] : goal.weight;
+                  const currentRelevance = localGoalRelevanceLevels[goalIdStr] || goal.relevanceLevel;
                   const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
                   
                   return (
-                    <div key={goal.id} className="p-4 bg-gray-700 rounded-md">
+                    <div key={goal.goalId.id} className="p-4 bg-gray-700 rounded-md">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white">{goal.name}</span>
+                        <span className="font-medium text-white">{goal.goalId.name}</span>
                         <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
                       </div>
                       
@@ -942,7 +1049,7 @@ function HomeContent() {
                       <div className="mb-3">
                         <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
                         <Select 
-                          onValueChange={(value) => handleGoalRelevanceChange(goal.id, value)} 
+                          onValueChange={(value) => handleGoalRelevanceChange(goalIdStr, value)} 
                           value={currentRelevance}
                         >
                           <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
@@ -968,7 +1075,7 @@ function HomeContent() {
                           min="0"
                           max="100"
                           value={currentWeight * 100}
-                          onChange={(e) => handleGoalWeightChange(goal.id, Number(e.target.value))}
+                          onChange={(e) => handleGoalWeightChange(goalIdStr, Number(e.target.value))}
                           className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
                         />
                       </div>
@@ -976,20 +1083,12 @@ function HomeContent() {
                   );
                 })}
               </div>
-            ) : (
-              <div className="text-gray-400">No goals available</div>
             )}
 
             {/* Total Goal Score */}
             <Card className="p-4 text-center bg-gray-900 mt-4">
               <h3 className="text-lg text-white font-semibold">Total Goal Score</h3>
               <p className="text-white text-2xl font-bold mt-2">{goalScore.toFixed(3)}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Sum of weights: {selectedThreatActor ? 
-                  Object.values(localGoalWeights).reduce((sum, weight) => sum + weight, 0).toFixed(3) : 
-                  '0.000'
-                }
-              </p>
             </Card>
           </Card>
         </div>
@@ -1027,10 +1126,10 @@ function HomeContent() {
 
             {/* UI for Location Match */}
             <div className="flex items-center justify-center space-x-3 mt-2">
-  <MatchIcon matched={locationMatchScore === 1} />
-              <span
-    className={`text-2xl font-semibold ${
-      locationMatchScore === 1 ? 'text-red-500' : 'text-green-500'
+              <MatchIcon matched={locationMatchScore === 1} />
+                          <span
+                className={`text-2xl font-semibold ${
+                  locationMatchScore === 1 ? 'text-red-500' : 'text-green-500'
     }`}
   >
     {locationMatchScore}
@@ -1148,7 +1247,7 @@ function HomeContent() {
               </div>
               <div>
                 <span className="text-gray-300">Motivations Configured:</span>
-                <span className="text-white ml-2">{contextMotivationAnalysis.length}</span>
+                <span className="text-white ml-2">{motivationAnalysis.length}</span>
               </div>
               <div>
                 <span className="text-gray-300">Goals Configured:</span>

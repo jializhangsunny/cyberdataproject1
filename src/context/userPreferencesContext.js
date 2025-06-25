@@ -25,39 +25,6 @@ export const UserPreferencesProvider = ({ children }) => {
   const [hasLoadedAllPreferences, setHasLoadedAllPreferences] = useState(false);
   const [hasAnyPreferences, setHasAnyPreferences] = useState(false);
 
-  // Load preferences for specific threat actor
-  // const loadPreferencesForThreatActor = useCallback(async (userId, threatActorId) => {
-  //   if (!userId || !threatActorId) return;
-    
-  //   setLoading(true);
-  //   setError(null);
-  //   try {
-  //     const data = await userPreferencesService.getUserPreferences(userId, threatActorId);
-  //     setCurrentPreferences(data);
-  //     setCurrentThreatActorId(threatActorId);
-  //   } catch (err) {
-  //     // Handle 404 by creating default preferences
-  //     if (err.response?.status === 404) {
-  //       console.log('No preferences found for this threat actor, using defaults');
-  //       setCurrentPreferences({
-  //         userId,
-  //         threatActorId,
-  //         sophisticationResourceWeights: { sophisticationWeight: 0.5, resourceWeight: 0.5 },
-  //         motivationAnalysis: [],
-  //         goalsAnalysis: [],
-  //         vulnerabilities: [],
-  //         commonVulnerabilitiesLevel: 'Moderate',
-  //         lossTypes: []
-  //       });
-  //       setCurrentThreatActorId(threatActorId);
-  //     } else {
-  //       setError(err.message || 'Failed to load preferences');
-  //       console.error('Error loading user preferences:', err);
-  //     }
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, []);
   const loadPreferencesForThreatActor = useCallback(async (userId, threatActorId) => {
   if (!userId || !threatActorId) return;
   
@@ -132,31 +99,6 @@ export const UserPreferencesProvider = ({ children }) => {
       setHasLoadedAllPreferences(false);
     }
   }, []);
-
-  // Update preferences for current threat actor
-  // const updatePreferences = useCallback(async (updates) => {
-  //   if (!user?.id || !currentThreatActorId) return;
-    
-  //   try {
-  //     // Optimistically update local state
-  //     setCurrentPreferences(prev => ({ ...prev, ...updates }));
-      
-  //     // Update on server
-  //     const updatedPreferences = await userPreferencesService.updatePreferences(
-  //       user.id, 
-  //       currentThreatActorId, 
-  //       updates
-  //     );
-  //     setCurrentPreferences(updatedPreferences);
-      
-  //     // Refresh all preferences
-  //     await loadAllUserPreferences(user.id);
-  //   } catch (err) {
-  //     setError(err.message || 'Failed to update preferences');
-  //     // Reload preferences on error to sync with server
-  //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-  //   }
-  // }, [user?.id, currentThreatActorId, loadAllUserPreferences, loadPreferencesForThreatActor]);
 
   const updatePreferences = useCallback(async (updates) => {
   if (!user?.id || !currentThreatActorId) return;
