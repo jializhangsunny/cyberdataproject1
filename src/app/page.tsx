@@ -197,56 +197,98 @@ function HomeContent() {
     }
   }, [user?.id, preferencesLoading, hasLoadedAllPreferences, isFirstTimeUser, hasCheckedFirstTime]);
 
-  useEffect(() => {
-    if (!isSaving.current && preferences && selectedThreatActor) {
-      // Fix: Use threatActorId.id instead of threatActorId
-      if (preferences.threatActorId?.id === selectedThreatActor.id && 
-          motivationAnalysis.length > 0 && 
-          contextGoalsAnalysis.length > 0) {
+  // useEffect(() => {
+  //   if (!isSaving.current && preferences && selectedThreatActor) {
+  //     // Fix: Use threatActorId.id instead of threatActorId
+  //     if (preferences.threatActorId?.id === selectedThreatActor.id && 
+  //         motivationAnalysis.length > 0 && 
+  //         contextGoalsAnalysis.length > 0) {
         
-        // Update local state with the loaded preference values
-        const motivationWeights: { [key: string]: number } = {};
-        const motivationRelevance: { [key: string]: string } = {};
-        motivationAnalysis.forEach((motivation: any) => {
-          motivationWeights[motivation.motivationId] = motivation.weight;
-          motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
-          console.log(`Setting motivation ${motivation.motivationId}: weight=${motivation.weight}, relevance=${motivation.relevanceLevel}`);
-        });
+  //       // Update local state with the loaded preference values
+  //       const motivationWeights: { [key: string]: number } = {};
+  //       const motivationRelevance: { [key: string]: string } = {};
+  //       motivationAnalysis.forEach((motivation: any) => {
+  //         motivationWeights[motivation.motivationId] = motivation.weight;
+  //         motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
+  //         console.log(`Setting motivation ${motivation.motivationId}: weight=${motivation.weight}, relevance=${motivation.relevanceLevel}`);
+  //       });
         
-        const goalWeights: { [key: string]: number } = {};
-        const goalRelevance: { [key: string]: string } = {};
-        contextGoalsAnalysis.forEach((goal: any) => {
-          goalWeights[goal.goalId] = goal.weight;
-          goalRelevance[goal.goalId] = goal.relevanceLevel;
-          console.log(`Setting goal ${goal.goalId}: weight=${goal.weight}, relevance=${goal.relevanceLevel}`);
-        });
+  //       const goalWeights: { [key: string]: number } = {};
+  //       const goalRelevance: { [key: string]: string } = {};
+  //       contextGoalsAnalysis.forEach((goal: any) => {
+  //         goalWeights[goal.goalId] = goal.weight;
+  //         goalRelevance[goal.goalId] = goal.relevanceLevel;
+  //         console.log(`Setting goal ${goal.goalId}: weight=${goal.weight}, relevance=${goal.relevanceLevel}`);
+  //       });
         
-        setLocalMotivationWeights(motivationWeights);
-        setLocalGoalWeights(goalWeights);
-        setLocalMotivationRelevanceLevels(motivationRelevance);
-        setLocalGoalRelevanceLevels(goalRelevance);
-        setLocalW1(sophisticationWeight);
-        setLocalW2(resourceWeight);
-      }
-    }
-  }, [preferences?.updatedAt, selectedThreatActor?.id, motivationAnalysis.length, contextGoalsAnalysis.length]);
+  //       setLocalMotivationWeights(motivationWeights);
+  //       setLocalGoalWeights(goalWeights);
+  //       setLocalMotivationRelevanceLevels(motivationRelevance);
+  //       setLocalGoalRelevanceLevels(goalRelevance);
+  //       setLocalW1(sophisticationWeight);
+  //       setLocalW2(resourceWeight);
+  //     }
+  //   }
+  // }, [preferences?.updatedAt, selectedThreatActor?.id, motivationAnalysis.length, contextGoalsAnalysis.length]);
 
-  // Separate effect for when preferences are loaded/updated
+  // // Separate effect for when preferences are loaded/updated
+  // useEffect(() => {
+  //   if (preferences && motivationAnalysis.length > 0 && contextGoalsAnalysis.length > 0 && !isSaving.current) {
+  //     // Update local state with the loaded preference values
+  //     const motivationWeights: { [key: string]: number } = {};
+  //     const motivationRelevance: { [key: string]: string } = {};
+  //     motivationAnalysis.forEach((motivation: any) => {
+  //       motivationWeights[motivation.motivationId] = motivation.weight;
+  //       motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
+  //     });
+      
+  //     const goalWeights: { [key: string]: number } = {};
+  //     const goalRelevance: { [key: string]: string } = {};
+  //     contextGoalsAnalysis.forEach((goal: any) => {
+  //       goalWeights[goal.goalId] = goal.weight;
+  //       goalRelevance[goal.goalId] = goal.relevanceLevel;
+  //     });
+      
+  //     setLocalMotivationWeights(motivationWeights);
+  //     setLocalGoalWeights(goalWeights);
+  //     setLocalMotivationRelevanceLevels(motivationRelevance);
+  //     setLocalGoalRelevanceLevels(goalRelevance);
+  //     setLocalW1(sophisticationWeight);
+  //     setLocalW2(resourceWeight);
+  //   }
+  // }, [preferences?.updatedAt]); // Only when preferences actually change
+
   useEffect(() => {
-    if (preferences && motivationAnalysis.length > 0 && contextGoalsAnalysis.length > 0 && !isSaving.current) {
+  if (!isSaving.current && selectedThreatActor) {
+    console.log('Loading preferences for threat actor:', selectedThreatActor.name);
+    
+    // If we have saved preferences for this threat actor
+    if (preferences && 
+        preferences.threatActorId?.id === selectedThreatActor.id && 
+        motivationAnalysis.length > 0 && 
+        contextGoalsAnalysis.length > 0) {
+      
+      console.log('Loading saved preferences');
+      
       // Update local state with the loaded preference values
       const motivationWeights: { [key: string]: number } = {};
       const motivationRelevance: { [key: string]: string } = {};
       motivationAnalysis.forEach((motivation: any) => {
-        motivationWeights[motivation.motivationId] = motivation.weight;
-        motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
+        // Handle both possible data structures
+        const motivationId = motivation.motivationId?.id || motivation.motivationId;
+        motivationWeights[motivationId] = motivation.weight;
+        motivationRelevance[motivationId] = motivation.relevanceLevel;
+        console.log(`Loading motivation ${motivationId}: weight=${motivation.weight}, relevance=${motivation.relevanceLevel}`);
       });
       
       const goalWeights: { [key: string]: number } = {};
       const goalRelevance: { [key: string]: string } = {};
       contextGoalsAnalysis.forEach((goal: any) => {
-        goalWeights[goal.goalId] = goal.weight;
-        goalRelevance[goal.goalId] = goal.relevanceLevel;
+        // Handle both possible data structures
+        const goalId = goal.goalId?.id || goal.goalId;
+        goalWeights[goalId] = goal.weight;
+        goalRelevance[goalId] = goal.relevanceLevel;
+        console.log(`Loading goal ${goalId}: weight=${goal.weight}, relevance=${goal.relevanceLevel}`);
       });
       
       setLocalMotivationWeights(motivationWeights);
@@ -255,9 +297,55 @@ function HomeContent() {
       setLocalGoalRelevanceLevels(goalRelevance);
       setLocalW1(sophisticationWeight);
       setLocalW2(resourceWeight);
+    } 
+    // If no saved preferences, set defaults based on threat actor data
+    else {
+      console.log('No saved preferences, setting defaults');
+      
+      // Set default weights based on threat actor data or equal distribution
+      const motivationWeights: { [key: string]: number } = {};
+      const motivationRelevance: { [key: string]: string } = {};
+      
+      if (selectedThreatActor.motivations.length > 0) {
+        const defaultWeight = 1.0 / selectedThreatActor.motivations.length;
+        selectedThreatActor.motivations.forEach((motivation) => {
+          motivationWeights[motivation.id] = motivation.weight || defaultWeight;
+          motivationRelevance[motivation.id] = motivation.relevanceLevel || "Moderate";
+        });
+      }
+      
+      const goalWeights: { [key: string]: number } = {};
+      const goalRelevance: { [key: string]: string } = {};
+      
+      if (selectedThreatActor.goals.length > 0) {
+        const defaultWeight = 1.0 / selectedThreatActor.goals.length;
+        selectedThreatActor.goals.forEach((goal) => {
+          goalWeights[goal.id] = goal.weight || defaultWeight;
+          goalRelevance[goal.id] = goal.relevanceLevel || "Moderate";
+        });
+      }
+      
+      setLocalMotivationWeights(motivationWeights);
+      setLocalGoalWeights(goalWeights);
+      setLocalMotivationRelevanceLevels(motivationRelevance);
+      setLocalGoalRelevanceLevels(goalRelevance);
+      
+      // Set default sophistication/resource weights if no preferences
+      if (!preferences || preferences.threatActorId?.id !== selectedThreatActor.id) {
+        setLocalW1(0.5);
+        setLocalW2(0.5);
+      }
     }
-  }, [preferences?.updatedAt]); // Only when preferences actually change
-
+  }
+}, [
+  selectedThreatActor?.id, 
+  preferences?.threatActorId?.id, 
+  motivationAnalysis.length, 
+  contextGoalsAnalysis.length,
+  sophisticationWeight,
+  resourceWeight,
+  isSaving.current
+]);
 
 
   // Fetch all threat actors on component mount
