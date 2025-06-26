@@ -21,6 +21,8 @@ const updatePreferences = async (userId, threatActorId, preferences) => {
     return response.data
 }
 
+
+// THE SERVICES BELOW ARE NOT IMPLMENETED IN THE BACKEND - use bulk updates
 // Update sophistication/resource weights for specific threat actor
 const updateSophisticationResourceWeights = async (userId, threatActorId, sophisticationWeight, resourceWeight) => {
     const response = await axios.put(`${baseUrl}/${userId}/${threatActorId}/weights`, {

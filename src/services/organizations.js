@@ -2,6 +2,7 @@ import axios from 'axios'
 
 // const baseUrl = 'http://localhost:5000/api/organizations'
 const baseUrl = 'https://rocsi-production.up.railway.app/api/organizations'
+const baseVulnUrl = 'https://rocsi-production.up.railway.app/api/organization-vulnerabilities'
 
 const getAll = async () => {
     const response = await axios.get(baseUrl)
@@ -34,7 +35,7 @@ const addVulnerability = async (id, vulnerabilityData) => {
 }
 
 const updateVulnerability = async (id, vulnerabilityId, vulnerabilityData) => {
-    const response = await axios.put(`${baseUrl}/${id}/vulnerabilities/${vulnerabilityId}`, vulnerabilityData)
+    const response = await axios.put(`${baseVulnUrl}/${vulnerabilityId}`, vulnerabilityData)
     return response.data
 }
 

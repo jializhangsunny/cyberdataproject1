@@ -59,7 +59,7 @@ export const UserPreferencesProvider = ({ children }) => {
         motivationAnalysis: [],
         goalsAnalysis: [],
         vulnerabilities: [],
-        commonVulnerabilitiesLevel: 'Moderate',
+        commonVulnerabilitiesLevel: [],
         lossTypes: []
       });
       setCurrentThreatActorId(threatActorId);
@@ -153,44 +153,60 @@ export const UserPreferencesProvider = ({ children }) => {
   }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
 
   // Update motivation analysis
-  const updateMotivationAnalysis = useCallback(async (motivationAnalysis) => {
-    if (!user?.id || !currentThreatActorId) return;
+  // const updateMotivationAnalysis = useCallback(async (motivationAnalysis) => {
+  //   if (!user?.id || !currentThreatActorId) return;
     
-    try {
-      // Optimistically update local state
-      setCurrentPreferences(prev => ({ ...prev, motivationAnalysis }));
+  //   try {
+  //     // Optimistically update local state
+  //     setCurrentPreferences(prev => ({ ...prev, motivationAnalysis }));
       
-      const updatedPreferences = await userPreferencesService.updateMotivationAnalysis(
-        user.id, 
-        currentThreatActorId,
-        motivationAnalysis
-      );
-      setCurrentPreferences(updatedPreferences);
-    } catch (err) {
-      setError(err.message || 'Failed to update motivation analysis');
-      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-    }
-  }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
+  //     const updatedPreferences = await userPreferencesService.updateMotivationAnalysis(
+  //       user.id, 
+  //       currentThreatActorId,
+  //       motivationAnalysis
+  //     );
+  //     setCurrentPreferences(updatedPreferences);
+  //   } catch (err) {
+  //     setError(err.message || 'Failed to update motivation analysis');
+  //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
+  //   }
+  // }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
 
   // Update goals analysis
-  const updateGoalsAnalysis = useCallback(async (goalsAnalysis) => {
-    if (!user?.id || !currentThreatActorId) return;
+  // const updateGoalsAnalysis = useCallback(async (goalsAnalysis) => {
+  //   if (!user?.id || !currentThreatActorId) return;
     
-    try {
-      // Optimistically update local state
-      setCurrentPreferences(prev => ({ ...prev, goalsAnalysis }));
+  //   try {
+  //     // Optimistically update local state
+  //     setCurrentPreferences(prev => ({ ...prev, goalsAnalysis }));
       
-      const updatedPreferences = await userPreferencesService.updateGoalsAnalysis(
-        user.id, 
-        currentThreatActorId,
-        goalsAnalysis
-      );
-      setCurrentPreferences(updatedPreferences);
-    } catch (err) {
-      setError(err.message || 'Failed to update goals analysis');
-      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-    }
-  }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
+  //     const updatedPreferences = await userPreferencesService.updateGoalsAnalysis(
+  //       user.id, 
+  //       currentThreatActorId,
+  //       goalsAnalysis
+  //     );
+  //     setCurrentPreferences(updatedPreferences);
+  //   } catch (err) {
+  //     setError(err.message || 'Failed to update goals analysis');
+  //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
+  //   }
+  // }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
+
+const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
+  const commonVulns = currentPreferences?.commonVulnerabilitiesLevel;
+  
+  // Add debugging
+  console.log('commonVulns:', commonVulns, 'type:', typeof commonVulns);
+  
+  // Ensure it's an array
+  if (!Array.isArray(commonVulns)) {
+    console.warn('commonVulnerabilitiesLevel is not an array:', commonVulns);
+    return null;
+  }
+  
+  const found = commonVulns.find(cv => cv.vulnerabilityId === vulnerabilityId);
+  return found ? found.level : null;
+}, [currentPreferences]);
 
   // Clear error
   const clearError = useCallback(() => setError(null), []);
@@ -225,12 +241,13 @@ export const UserPreferencesProvider = ({ children }) => {
     loadAllUserPreferences,
     updatePreferences,
     updateWeights,
-    updateMotivationAnalysis,
-    updateGoalsAnalysis,
+    // updateMotivationAnalysis,
+    // updateGoalsAnalysis,
     clearError,
     
     // Helpers
     getPreference,
+    getCommonVulnerabilityLevel,
     isFirstTimeUser,
     
     // Computed values for easy access

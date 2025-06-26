@@ -163,7 +163,6 @@ function HomeContent() {
 
   useEffect(() => {
     if (user?.id) {
-      console.log("loading all prefs for user", user.id)
       loadAllUserPreferences(user.id);
     }
   }, [user?.id, loadAllUserPreferences]);
@@ -186,7 +185,6 @@ function HomeContent() {
     // Only check after we've loaded all preferences and haven't checked yet
     if (user?.id && !preferencesLoading && hasLoadedAllPreferences && !hasCheckedFirstTime) {
       const isFirstTime = isFirstTimeUser();
-      console.log('Checking first time user:', isFirstTime);
       
       if (isFirstTime) {
         setShowWelcomeBanner(true);
@@ -242,8 +240,6 @@ function HomeContent() {
       if (preferences.threatActorId?.id === selectedThreatActor.id && 
           motivationAnalysis.length > 0 && 
           contextGoalsAnalysis.length > 0) {
-        
-        console.log('Preferences loaded for current threat actor, syncing local state');
         
         // Update local state with the loaded preference values
         const motivationWeights: { [key: string]: number } = {};
