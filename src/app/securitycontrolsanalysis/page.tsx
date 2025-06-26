@@ -10,6 +10,7 @@ import EvaluationSuggestion from "@/components/evaluationsuggestion";
 import ControlCostsAnalysis from "./controlcostsanalysis";
 import ControlSelectionMatrix from "./controlselectionmatrix";
 import { useAppContext } from "@/context/appcontext";
+import OnboardingTour from "@/components/OnboardingTour";
 
 const commonVulnerabilities = [
   { id: "CVE-2017-0144", control: "Network Segmentation" },
@@ -21,6 +22,12 @@ const recommendedControls = [
   "Network Segmentation",
   "MS17-010 Patch",
   "Web Application Firewall",
+];
+
+const scSteps = [
+  { selector: "#tour-vuln-control", content: "Review current vulnerability-control mapping." },
+  { selector: "#tour-control-matrix",     content: "Review control matrix and effect." },
+  { selector: "#tour-rocsi-score",      content: "Review ROCSI analysis." },
 ];
 
 const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolean) => void }) => {
@@ -51,7 +58,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         <h1 className="text-3xl font-bold mb-6">Security Controls Analysis & ROSI Calculation</h1>
 
         {/* Vulnerability-Control Mapping */}
-        <Card className="bg-gray-300 text-black p-6">
+        <Card id="tour-vuln-control" className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">Vulnerability-Control Mapping</h2>
           <p><strong>Controls in Org:</strong> System Updated, Web Application Firewall</p>
           <p><strong>Recommended Controls from CTI:</strong> {recommendedControls.join(", ")}</p>
@@ -102,7 +109,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         </Card>
 
         {/* Interaction Effect Analysis */}
-        <Card className="bg-gray-300 text-black p-6">
+        <Card id="tour-control-matrix" className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">Interaction Effect Analysis of Controls</h2>
           <p className="mb-4"><strong>Note:</strong> Controls may overlap, produce synergies, or conflict with each other.</p>
           <table className="w-full text-sm border border-gray-400">
@@ -148,7 +155,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         </Card>
 
         {/* ROSI */}
-        <Card className="bg-gray-300 text-black p-6">
+        <Card id="tour-rocsi-score" className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">ROCSI Analysis</h2>
           <p>Return on Control Security Investment (ROCSI) based on selected controls.</p>
           <table className="w-full text-sm border border-gray-400 mt-4">
@@ -187,10 +194,14 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
           </table>
         </Card>
 
-        <button onClick={() => setShowModal(true)} className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
+        <button onClick={() => setShowModal(true)}
+                className="fixed bottom-6 right-6 z-40
+                bg-red-500 text-white px-4 py-2 rounded-md
+                shadow-lg transition-colors hover:bg-red-600">
           Show Evaluation Suggestion
         </button>
       </div>
+      <OnboardingTour steps={scSteps} storageKey="tour_done_sc" />
     </div>
   );
 };

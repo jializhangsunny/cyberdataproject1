@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAppContext } from "@/context/appcontext";
 import { useAuth } from "@/context/authContext";
-
+import OnboardingTour from "@/components/OnboardingTour";
+import type { StepType } from "@reactour/tour";
 import assetService from '../../services/assets'
 
 // Loss Types
@@ -16,6 +17,13 @@ const LOSS_TYPES = [
   { label: "Business Disruption", value: 12.5 },
   { label: "Customer Loss", value: 400 },
 ];
+
+const riskSteps : StepType[] = [
+  { selector: "#tour-risk-filters", content: "Use filters to focus.", position: "top" },
+  { selector: "#tour-risk-summary", content: "Residual risk summary." , position: "top"},
+];
+
+
 
 export default function RiskAnalysis() {
   const [assets, setAssets] = useState<any[]>([]);
@@ -203,7 +211,7 @@ export default function RiskAnalysis() {
         )}
 
         {/* Secondary Loss Magnitude (SLM) Analysis */}
-        <Card className="p-6 mb-8 bg-white">
+        <Card id="tour-risk-filters" className="p-6 mb-8 bg-white">
           <h2 className="text-xl font-semibold mb-4 text-black">Secondary Loss Magnitude (SLM) Analysis</h2>
           <table className="w-full text-sm text-black">
             <thead>
@@ -245,9 +253,10 @@ export default function RiskAnalysis() {
         </Card>
 
         {/* Total Risk Calculation */}
-        <Card className="p-6 mb-8 bg-white">
-          <h2 className="text-xl font-semibold mb-4 text-black">Total Risk ($million)</h2>
-          <div className="space-y-2 text-black">
+        <Card id="tour-risk-summary" className="p-6 mb-8 text-center bg-red-700">
+          <h2 className="text-xl font-semibold">Total Risk ($million)</h2>
+
+          <div className="space-y-2 text-white">
             <p>
               <strong>Total LEF:</strong> {totalLef.toFixed(4)}
             </p>
@@ -257,12 +266,13 @@ export default function RiskAnalysis() {
             <p>
               <strong>Total SLM:</strong> {totalAmount.toFixed(2)}
             </p>
-            <p className="text-red-500 font-bold text-2xl mt-4">
+            <p className="text-white font-bold text-2xl mt-4">
               Total Risk = Total LEF × Total PLM + Total SLM ={" "}
               {totalRisk.toFixed(2)} ($million)
             </p>
           </div>
         </Card>
+        <OnboardingTour steps={riskSteps} storageKey="tour_done_risk" />
       </div>
     </div>
   );

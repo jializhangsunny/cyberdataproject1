@@ -11,7 +11,8 @@ import { useUserPreferences } from "@/context/userPreferencesContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Check, X } from 'lucide-react';
 import { HelpCircle } from 'lucide-react';
-
+import OnboardingTour from "@/components/OnboardingTour";
+import type { StepType } from "@reactour/tour";
 
 
 
@@ -113,6 +114,29 @@ const SECTORS = [
 ];
 
 const COLORS = ["#8884d8", "#82ca9d"];
+
+const tasteps : StepType[]= [
+  {
+    selector: "#tour-select-threat-actor",
+    content: "Select a threat actor to analyse.",
+    position: "bottom",
+  },
+  {
+    selector: "#tour-threat-ability",
+    content: " Adjust the weights and inspect the Threat-Ability gauge.",
+    position: "top",
+  },
+  {
+    selector: "#tour-location-sector",
+    content: " Choose your organisation’s location & sector to see the match.",
+    position: "top",
+  },
+  {
+    selector: "#tour-tef-value",
+    content: "Here you’ll find the composite TEF risk score.",
+    position: "top",
+  },
+];
 
 //add function match to show icon
 function MatchIcon({ matched }: { matched: boolean }) {
@@ -544,6 +568,7 @@ const handleSavePreferences = async () => {
     );
   }
 
+
   return (
     <div className="flex h-screen bg-gray-900 text-white">
 
@@ -678,7 +703,8 @@ const handleSavePreferences = async () => {
       {/* Main Content */}
       <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
         {threatActors.length > 0 && (
-          <Card className="p-4 bg-gray-800">
+          <Card id="tour-select-threat-actor"
+                className="p-4 bg-gray-800">
             <h2 className="text-xl font-semibold mb-2 text-white">Select Threat Actor</h2>
             <Select onValueChange={handleThreatActorChange} value={selectedThreatActorId || ""}>
               <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
@@ -799,7 +825,7 @@ const handleSavePreferences = async () => {
         </div>
 
         {/* Weights Section with Sliders */}
-        <Card className="p-4 mb-4 bg-gray-800">
+        <Card id="tour-threat-ability" className="p-4 mb-4 bg-gray-800">
           <h2 className="text-xl font-semibold mb-4 text-center text-white">Weight Adjustment</h2>
           
           <div className="mb-6">
@@ -1095,7 +1121,7 @@ const handleSavePreferences = async () => {
         </div>
 
         {/* Location and Sector Match Row */}
-        <div className="flex justify-between space-x-8 mb-8">
+        <div id="tour-location-sector" className="flex justify-between space-x-8 mb-8">
           {/* Location Match */}
           <Card className="p-4 flex-1">
             <h2 className="text-xl font-semibold mb-2">Location Match</h2>
@@ -1181,7 +1207,7 @@ const handleSavePreferences = async () => {
         </div>
 
         {/* TEF Calculation Card */}
-        <Card className="p-4 mb-8 text-center bg-red-700">
+        <Card id="tour-tef-value" className="p-4 mb-8 text-center bg-red-700">
           <h2 className="text-xl font-semibold">Final TEF Calculation</h2>
           <p className="text-white text-lg mb-2">
             TA ({threatAbility.toFixed(3)}) × Motivation ({motivationScore.toFixed(3)}) × Goals ({goalScore.toFixed(3)}) × Location ({locationMatchScore}) × Sector ({sectorMatchScore})
@@ -1262,22 +1288,9 @@ const handleSavePreferences = async () => {
         )}
       </div>
 
-          {/* Help Link */}
-          <Link
-              href="/help"
-              aria-label="Help Center"
-              className="fixed right-6 bottom-6 z-50 rounded-full
-             bg-blue-600 p-4 shadow-lg transition-colors
-             hover:bg-blue-700 focus:outline-none
-             focus:ring-4 focus:ring-blue-300 group">
-            <HelpCircle className="h-6 w-6 text-white" />
-            <span
-                className="absolute right-16 top-1/2 -translate-y-1/2 scale-0
-               rounded bg-gray-800 px-2 py-1 text-xs text-white
-               transition-all group-hover:scale-100">
-              Help
-            </span>
-          </Link>
+
+      <OnboardingTour steps={tasteps} storageKey="tour_done_ta" />
+
     </div>
   );
 }

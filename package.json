@@ -18,6 +18,7 @@
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-slot": "^1.1.2",
+    "@reactour/tour": "^3.8.0",
     "@tailwindcss/postcss": "^4.0.14",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
