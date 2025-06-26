@@ -197,47 +197,6 @@ function HomeContent() {
     }
   }, [user?.id, preferencesLoading, hasLoadedAllPreferences, isFirstTimeUser, hasCheckedFirstTime]);
 
-  // useEffect(() => {
-  //   if (!isSaving.current && preferences && selectedThreatActor) {
-  //     // Only update if preferences are for the current threat actor
-  //     console.log(motivationAnalysis)
-  //     if (preferences.threatActorId === selectedThreatActor.id && 
-  //         motivationAnalysis.length > 0 && 
-  //         contextGoalsAnalysis.length > 0) {
-        
-  //       console.log('Preferences loaded for current threat actor, syncing local state');
-        
-  //       // Update local state with the loaded preference values
-  //       const motivationWeights: { [key: string]: number } = {};
-  //       const motivationRelevance: { [key: string]: string } = {};
-  //       motivationAnalysis.forEach(motivation => {
-  //         motivationWeights[motivation.motivationId] = motivation.weight;
-  //         motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
-  //       });
-        
-  //       const goalWeights: { [key: string]: number } = {};
-  //       const goalRelevance: { [key: string]: string } = {};
-  //       contextGoalsAnalysis.forEach(goal => {
-  //         goalWeights[goal.goalId] = goal.weight;
-  //         goalRelevance[goal.goalId] = goal.relevanceLevel;
-  //       });
-
-  //       console.log(motivationAnalysis)
-        
-  //       setLocalMotivationWeights(motivationWeights);
-  //       setLocalGoalWeights(goalWeights);
-  //       setLocalMotivationRelevanceLevels(motivationRelevance);
-  //       setLocalGoalRelevanceLevels(goalRelevance);
-  //       setLocalW1(sophisticationWeight);
-  //       setLocalW2(resourceWeight);
-  //     }
-  //   }
-  // }, [preferences?.updatedAt, selectedThreatActor?.id]);
-
-  // Replace your useEffect with this debug version to see what's failing:
-
-// Replace your debug useEffect with this fixed version:
-
   useEffect(() => {
     if (!isSaving.current && preferences && selectedThreatActor) {
       // Fix: Use threatActorId.id instead of threatActorId
