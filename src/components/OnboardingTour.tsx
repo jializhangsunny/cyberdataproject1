@@ -31,15 +31,14 @@ export default function OnboardingTour({
   return (
     <TourProvider
       steps={steps}
-      maskBg={maskBg}
-      afterClose={() => localStorage.setItem(storageKey, "yes")}
+      onClickClose={() => localStorage.setItem(storageKey, "yes")}
+
       styles={{
         /* ubble */
-        popover: (base: CSSProperties): CSSProperties => ({
+        popover: (base): CSSProperties => ({
           ...base,
-          background: "#2563eb",        // blue-600
-          color: "#f3f4f6",             // gray-100
-          fontFamily: "Inter, sans-serif",
+          background: "#2563eb",
+          color: "#f3f4f6",
           fontSize: 20,
           borderRadius: 8,
           padding: "16px 40px",
@@ -50,7 +49,7 @@ export default function OnboardingTour({
         }),
         badge: (base: CSSProperties): CSSProperties => ({
           ...base, background: "#3b82f6", fontSize: 20,}),
-        buttonNext: (base: CSSProperties): CSSProperties => ({
+        button: (base: CSSProperties): CSSProperties => ({
           ...base,
           background: "#3b82f6",
           fontSize: 20,
@@ -59,11 +58,17 @@ export default function OnboardingTour({
 
           close: (base) => ({
   ...base,
+color: "#ffffff",
+stroke: "#ffffff",
+strokeWidth: 1.5,
   width: 20,
   height: 20,
-  color: "#cbd5e1",
   right: 20,
-  top: 12,
+cursor: "pointer",
+        }),
+        maskWrapper: (base) => ({
+          ...base,
+          background: maskBg,
         }),
       }}
       showDots
