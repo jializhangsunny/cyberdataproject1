@@ -430,90 +430,42 @@ function HomeContent() {
     }));
   };
 
-  // Update the save handler to prevent reset during save
-// const handleSavePreferences = async () => {
-//   if (!selectedThreatActor || !user?.id) return;
-  
-//   setSaveLoading(true);
-//   isSaving.current = true; // Prevent useEffect from resetting during save
-  
-//   try {
-//     // Prepare motivation analysis data
-//     const motivationAnalysis = selectedThreatActor.motivations.map(motivation => ({
-//       motivationId: motivation.id,
-//       relevanceLevel: localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel,
-//       weight: localMotivationWeights[motivation.id] !== undefined ? localMotivationWeights[motivation.id] : motivation.weight
-//     }));
-
-//     // Prepare goals analysis data
-//     const goalsAnalysis = selectedThreatActor.goals.map(goal => ({
-//       goalId: goal.id,
-//       relevanceLevel: localGoalRelevanceLevels[goal.id] || goal.relevanceLevel,
-//       weight: localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight
-//     }));
-
-//     // Update preferences for this specific threat actor
-//     await updatePreferences({
-//       sophisticationResourceWeights: {
-//         sophisticationWeight: localW1,
-//         resourceWeight: localW2
-//       },
-//       motivationAnalysis,
-//       goalsAnalysis
-//     });
-
-//     // Hide welcome banner after successful save (user is no longer first-time)
-//     setShowWelcomeBanner(false);
+  const handleSavePreferences = async () => {
+    if (!selectedThreatActor || !user?.id) return;
     
-//     alert('Preferences saved successfully for ' + selectedThreatActor.name + '!');
-//   } catch (err) {
-//     console.error('Failed to save preferences:', err);
-//     alert('Failed to save preferences. Please try again.');
-//   } finally {
-//     setSaveLoading(false);
-//     // Small delay to ensure context has updated before allowing resets
-//     setTimeout(() => {
-//       isSaving.current = false;
-//     }, 100);
-//   }
-// };
+    setSaveLoading(true);
+    isSaving.current = true; // Prevent useEffect from resetting during save
+    
+    try {
+      // Get current preferences for fallback values
+      const currentMotivations = preferences?.motivationAnalysis || [];
+      const currentGoals = preferences?.goalsAnalysis || [];
+      const currentVulnerabilities = preferences?.vulnerabilities || [];
+      const currentCommonVulnerabilities = preferences?.commonVulnerabilitiesLevel || [];
+      const currentCustomLossTypes = preferences?.customLossTypes || [];
+      const currentAssetLossAmounts = preferences?.assetLossAmounts || [];
 
-const handleSavePreferences = async () => {
-  if (!selectedThreatActor || !user?.id) return;
-  
-  setSaveLoading(true);
-  isSaving.current = true; // Prevent useEffect from resetting during save
-  
-  try {
-    // Get current preferences for fallback values
-    const currentMotivations = preferences?.motivationAnalysis || [];
-    const currentGoals = preferences?.goalsAnalysis || [];
-    const currentVulnerabilities = preferences?.vulnerabilities || [];
-    const currentCommonVulnerabilities = preferences?.commonVulnerabilitiesLevel || [];
-    const currentCustomLossTypes = preferences?.customLossTypes || [];
-    const currentAssetLossAmounts = preferences?.assetLossAmounts || [];
-
-    // Prepare motivation analysis with proper fallbacks
-    const motivationAnalysis = selectedThreatActor.motivations.map(motivation => {
-      const existing = currentMotivations.find((m: any) => m.motivationId.id === motivation.id);
-      
-      // Priority: 1) Local changes, 2) Existing saved preferences, 3) Equal distribution default
-      let weight;
-      if (localMotivationWeights[motivation.id] !== undefined) {
-        weight = localMotivationWeights[motivation.id];
-      } else if (existing?.weight !== undefined) {
-        weight = existing.weight;
-      } else {
-        // Default to equal distribution if no preferences exist
-        weight = 1.0 / selectedThreatActor.motivations.length;
-      }
-      
-      return {
-        motivationId: motivation.id,
-        relevanceLevel: localMotivationRelevanceLevels[motivation.id] || (existing?.relevanceLevel || motivation.relevanceLevel),
-        weight: weight
-      };
-    });
+      // Prepare motivation analysis with proper fallbacks
+      const motivationAnalysis = selectedThreatActor.motivations.map(motivation => {
+        const existing = currentMotivations.find((m: any) => m.motivationId.id === motivation.id);
+        
+        // Priority: 1) Local changes, 2) Existing saved preferences, 3) Equal distribution default
+        let weight;
+        if (localMotivationWeights[motivation.id] !== undefined) {
+          weight = localMotivationWeights[motivation.id];
+        } else if (existing?.weight !== undefined) {
+          weight = existing.weight;
+        } else {
+          // Default to equal distribution if no preferences exist
+          weight = 1.0 / selectedThreatActor.motivations.length;
+        }
+        
+        return {
+          motivationId: motivation.id,
+          relevanceLevel: localMotivationRelevanceLevels[motivation.id] || (existing?.relevanceLevel || motivation.relevanceLevel),
+          weight: weight
+        };
+      });
 
     // Prepare goals analysis with proper fallbacks
     const goalsAnalysis = selectedThreatActor.goals.map(goal => {
