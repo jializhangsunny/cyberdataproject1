@@ -126,68 +126,28 @@ export const UserPreferencesProvider = ({ children }) => {
 }, [user?.id, currentThreatActorId, loadAllUserPreferences, loadPreferencesForThreatActor]);
 
   // Update sophistication/resource weights
-  const updateWeights = useCallback(async (sophisticationWeight, resourceWeight) => {
-    if (!user?.id || !currentThreatActorId) return;
-    
-    try {
-      // Optimistically update local state
-      setCurrentPreferences(prev => ({
-        ...prev,
-        sophisticationResourceWeights: {
-          sophisticationWeight,
-          resourceWeight
-        }
-      }));
-      
-      const updatedPreferences = await userPreferencesService.updateSophisticationResourceWeights(
-        user.id, 
-        currentThreatActorId,
-        sophisticationWeight, 
-        resourceWeight
-      );
-      setCurrentPreferences(updatedPreferences);
-    } catch (err) {
-      setError(err.message || 'Failed to update weights');
-      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-    }
-  }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
-
-  // Update motivation analysis
-  // const updateMotivationAnalysis = useCallback(async (motivationAnalysis) => {
+  // const updateWeights = useCallback(async (sophisticationWeight, resourceWeight) => {
   //   if (!user?.id || !currentThreatActorId) return;
     
   //   try {
   //     // Optimistically update local state
-  //     setCurrentPreferences(prev => ({ ...prev, motivationAnalysis }));
+  //     setCurrentPreferences(prev => ({
+  //       ...prev,
+  //       sophisticationResourceWeights: {
+  //         sophisticationWeight,
+  //         resourceWeight
+  //       }
+  //     }));
       
-  //     const updatedPreferences = await userPreferencesService.updateMotivationAnalysis(
+  //     const updatedPreferences = await userPreferencesService.updateSophisticationResourceWeights(
   //       user.id, 
   //       currentThreatActorId,
-  //       motivationAnalysis
+  //       sophisticationWeight, 
+  //       resourceWeight
   //     );
   //     setCurrentPreferences(updatedPreferences);
   //   } catch (err) {
-  //     setError(err.message || 'Failed to update motivation analysis');
-  //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-  //   }
-  // }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
-
-  // Update goals analysis
-  // const updateGoalsAnalysis = useCallback(async (goalsAnalysis) => {
-  //   if (!user?.id || !currentThreatActorId) return;
-    
-  //   try {
-  //     // Optimistically update local state
-  //     setCurrentPreferences(prev => ({ ...prev, goalsAnalysis }));
-      
-  //     const updatedPreferences = await userPreferencesService.updateGoalsAnalysis(
-  //       user.id, 
-  //       currentThreatActorId,
-  //       goalsAnalysis
-  //     );
-  //     setCurrentPreferences(updatedPreferences);
-  //   } catch (err) {
-  //     setError(err.message || 'Failed to update goals analysis');
+  //     setError(err.message || 'Failed to update weights');
   //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
   //   }
   // }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
@@ -208,6 +168,81 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
   return found ? found.level : null;
 }, [currentPreferences]);
 
+  // Add custom loss type
+  const addCustomLossType = useCallback(async (name, description) => {
+    if (!user?.id || !currentThreatActorId) return;
+    
+    try {
+      const updatedPreferences = await userPreferencesService.addCustomLossType(
+        user.id,
+        currentThreatActorId,
+        name,
+        description
+      );
+      setCurrentPreferences(updatedPreferences);
+      await loadAllUserPreferences(user.id);
+    } catch (err) {
+      setError(err.message || 'Failed to add custom loss type');
+    }
+  }, [user?.id, currentThreatActorId, loadAllUserPreferences]);
+
+  // Update asset loss amount
+  const updateAssetLossAmount = useCallback(async (assetId, lossTypeId, amount, isCustomType = false) => {
+    if (!user?.id || !currentThreatActorId) return;
+    
+    try {
+      const updatedPreferences = await userPreferencesService.updateAssetLossAmount(
+        user.id,
+        currentThreatActorId,
+        assetId,
+        lossTypeId,
+        amount,
+        isCustomType
+      );
+      setCurrentPreferences(updatedPreferences);
+    } catch (err) {
+      setError(err.message || 'Failed to update asset loss amount');
+    }
+  }, [user?.id, currentThreatActorId]);
+
+  // Remove custom loss type
+  const removeCustomLossType = useCallback(async (customLossTypeId) => {
+    if (!user?.id || !currentThreatActorId) return;
+    
+    try {
+      const updatedPreferences = await userPreferencesService.removeCustomLossType(
+        user.id,
+        currentThreatActorId,
+        customLossTypeId
+      );
+      setCurrentPreferences(updatedPreferences);
+      await loadAllUserPreferences(user.id);
+    } catch (err) {
+      setError(err.message || 'Failed to remove custom loss type');
+    }
+  }, [user?.id, currentThreatActorId, loadAllUserPreferences]);
+
+  // Get all custom loss types for user
+  const getAllCustomLossTypes = useCallback(async () => {
+    if (!user?.id) return [];
+    
+    try {
+      return await userPreferencesService.getAllCustomLossTypes(user.id);
+    } catch (err) {
+      console.error('Failed to get all custom loss types:', err);
+      return [];
+    }
+  }, [user?.id]);
+
+  // Helper to get loss amount for specific asset and loss type
+  const getAssetLossAmount = useCallback((assetId, lossTypeId) => {
+    const assetLossAmounts = currentPreferences?.assetLossAmounts || [];
+    const found = assetLossAmounts.find(
+      amount => amount.assetId === assetId && amount.lossTypeId === lossTypeId
+    );
+    return found ? found.amount : 0;
+  }, [currentPreferences]);
+
   // Clear error
   const clearError = useCallback(() => setError(null), []);
 
@@ -216,13 +251,7 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
     return currentPreferences?.[key] ?? defaultValue;
   }, [currentPreferences]);
 
-  // Check if this is first time for any threat actor
-  // const isFirstTimeUser = useCallback(() => {
-  //   return allPreferences.length === 0;
-  // }, [allPreferences.length]);
-
   const isFirstTimeUser = useCallback(() => {
-    // Only return true if we've checked and confirmed user has no preferences
     return hasLoadedAllPreferences && !hasAnyPreferences;
   }, [hasLoadedAllPreferences, hasAnyPreferences]);
 
@@ -240,14 +269,17 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
     loadPreferencesForThreatActor,
     loadAllUserPreferences,
     updatePreferences,
-    updateWeights,
-    // updateMotivationAnalysis,
-    // updateGoalsAnalysis,
+    // updateWeights,
+    addCustomLossType,
+    updateAssetLossAmount,
+    removeCustomLossType,
+    getAllCustomLossTypes,
     clearError,
     
     // Helpers
     getPreference,
     getCommonVulnerabilityLevel,
+    getAssetLossAmount,
     isFirstTimeUser,
     
     // Computed values for easy access
@@ -256,8 +288,9 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
     motivationAnalysis: currentPreferences?.motivationAnalysis ?? [],
     goalsAnalysis: currentPreferences?.goalsAnalysis ?? [],
     vulnerabilities: currentPreferences?.vulnerabilities ?? [],
-    commonVulnerabilitiesLevel: currentPreferences?.commonVulnerabilitiesLevel ?? 'Moderate',
-    lossTypes: currentPreferences?.lossTypes ?? []
+    commonVulnerabilitiesLevel: currentPreferences?.commonVulnerabilitiesLevel ?? [],
+    customLossTypes: currentPreferences?.customLossTypes ?? [],
+    assetLossAmounts: currentPreferences?.assetLossAmounts ?? [], 
   };
 
   return (

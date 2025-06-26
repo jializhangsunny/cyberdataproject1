@@ -6,15 +6,16 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useAppContext } from "@/context/appcontext";
 import { useAuth } from "@/context/authContext";
+import { useUserPreferences } from "@/context/userPreferencesContext";
 
 import assetService from '../../services/assets'
 
 // Loss Types
 const LOSS_TYPES = [
-  { label: "Reputation Loss", value: 280 },
-  { label: "Regulatory Penalties", value: 7.5 },
-  { label: "Business Disruption", value: 12.5 },
-  { label: "Customer Loss", value: 400 },
+  { label: "Reputation Loss", value: 0 },
+  { label: "Regulatory Penalties", value: 0 },
+  { label: "Business Disruption", value: 0 },
+  { label: "Customer Loss", value: 0 },
 ];
 
 export default function RiskAnalysis() {
@@ -26,7 +27,21 @@ export default function RiskAnalysis() {
   const { totalLef, setTotalRisk } = useAppContext();
   const { user } = useAuth();
 
-  const [selections, setSelections] = useState<string[]>(["", "", "", ""]);
+  const [selections, setSelections] = useState<string[]>([]);
+
+  const {
+    loadAllUserPreferences,
+    updatePreferences,
+
+    getPreference,
+
+    lossTypes 
+    // use these as custom loss types, 
+    // where you can save new ones as label: "new loss type", value: 0, 
+    // or use it as label: "existing loss type", value: saved value
+    // remember to save it to the backend
+    // also remember to save these per ASSET
+  } = useUserPreferences()
 
   // Load assets from backend
   useEffect(() => {
@@ -220,14 +235,14 @@ export default function RiskAnalysis() {
                       <SelectTrigger className="w-60 bg-white text-black">
                         <SelectValue placeholder="Select loss type" />
                       </SelectTrigger>
-                     <SelectContent>
-                       {LOSS_TYPES.filter(t =>
-      !selections.includes(t.label) || selections[i] === t.label)
-                           .map(t => (
-                               <SelectItem key={t.label} value={t.label}>{t.label}
-                               </SelectItem>
-                           ))}
-                     </SelectContent>
+                      <SelectContent>
+                        {LOSS_TYPES.filter(t =>
+                            !selections.includes(t.label) || selections[i] === t.label)
+                            .map(t => (
+                                <SelectItem key={t.label} value={t.label}>{t.label}
+                                </SelectItem>
+                            ))}
+                      </SelectContent>
                     </Select>
                   </td>
                   <td className="py-2 pl-4">
