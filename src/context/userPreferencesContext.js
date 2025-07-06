@@ -74,6 +74,7 @@ export const UserPreferencesProvider = ({ children }) => {
           setHasAnyPreferences(false);
         }
         setHasLoadedAllPreferences(true);
+        console.log('serch', allPreferences, currentPreferences)
       }
     } else {
       setError(err.message || 'Failed to load preferences');
@@ -170,7 +171,7 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
 
   // Add custom loss type
   const addCustomLossType = useCallback(async (name, description) => {
-    if (!user?.id || !currentThreatActorId) return;
+    // const threatActorId = `org-${user?.organization?.id}-assets`;
     
     try {
       const updatedPreferences = await userPreferencesService.addCustomLossType(
@@ -180,16 +181,18 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
         description
       );
       setCurrentPreferences(updatedPreferences);
-      await loadAllUserPreferences(user.id);
+      // await loadAllUserPreferences(user.id);
     } catch (err) {
       setError(err.message || 'Failed to add custom loss type');
     }
-  }, [user?.id, currentThreatActorId, loadAllUserPreferences]);
+  }, [user?.id]);
+
 
   // Update asset loss amount
   const updateAssetLossAmount = useCallback(async (assetId, lossTypeId, amount, isCustomType = false) => {
+    console.log('trying to update loss amount - context')
     if (!user?.id || !currentThreatActorId) return;
-    
+    console.log('ok we will try to udpate loss amount')
     try {
       const updatedPreferences = await userPreferencesService.updateAssetLossAmount(
         user.id,
@@ -200,6 +203,8 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
         isCustomType
       );
       setCurrentPreferences(updatedPreferences);
+      console.log(updatedPreferences)
+
     } catch (err) {
       setError(err.message || 'Failed to update asset loss amount');
     }
@@ -224,6 +229,7 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
 
   // Get all custom loss types for user
   const getAllCustomLossTypes = useCallback(async () => {
+    console.log('in context getAllCustomLossTypes', user?.id)
     if (!user?.id) return [];
     
     try {
@@ -289,8 +295,15 @@ const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
     goalsAnalysis: currentPreferences?.goalsAnalysis ?? [],
     vulnerabilities: currentPreferences?.vulnerabilities ?? [],
     commonVulnerabilitiesLevel: currentPreferences?.commonVulnerabilitiesLevel ?? [],
-    customLossTypes: currentPreferences?.customLossTypes ?? [],
-    assetLossAmounts: currentPreferences?.assetLossAmounts ?? [], 
+    // customLossTypes: currentPreferences?.customLossTypes ?? [],
+    // assetLossAmounts: currentPreferences?.assetLossAmounts ?? [], 
+    customLossTypes: Array.isArray(currentPreferences?.customLossTypes) 
+    ? currentPreferences.customLossTypes 
+    : [],
+    
+    assetLossAmounts: Array.isArray(currentPreferences?.assetLossAmounts)
+    ? currentPreferences.assetLossAmounts
+    : [],
   };
 
   return (
