@@ -10,6 +10,14 @@ import EvaluationSuggestion from "@/components/evaluationsuggestion";
 import ControlCostsAnalysis from "./controlcostsanalysis";
 import ControlSelectionMatrix from "./controlselectionmatrix";
 import { useAppContext } from "@/context/appcontext";
+import { useAuth } from "@/context/authContext";
+
+// services
+import organizationsService from "@/services/organizations";
+
+const { user } = useAuth(); // remember user.id and user.organization.id
+// on this page, fetch for all threat actors, so get all overlapping vulnerabilities from the organization service
+const [overlappingVulnerabilities, setOverlappingVulnerabilities] = useState([]);
 
 const commonVulnerabilities = [
   { id: "CVE-2017-0144", control: "Network Segmentation" },
