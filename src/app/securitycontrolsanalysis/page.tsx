@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -12,13 +12,19 @@ import ControlSelectionMatrix from "./controlselectionmatrix";
 import { useAppContext } from "@/context/appcontext";
 import { useAuth } from "@/context/authContext";
 
+// components
+import OrganizationControlsCard from "./OrganisationControlsCard";
+
+// types
+import { OverlappingVulnerability } from '../../types/vulnerabilities';
+import { OrganizationControls, OrganizationControlsResponse } from "@/types/organizationControls";
+
 // services
 import organizationsService from "@/services/organizations";
+import organizationControlsService from "@/services/organizationControls"
 
-const { user } = useAuth(); // remember user.id and user.organization.id
-// on this page, fetch for all threat actors, so get all overlapping vulnerabilities from the organization service
-const [overlappingVulnerabilities, setOverlappingVulnerabilities] = useState([]);
 
+// TODO: REMOVE ALL COMMON VULN REFERENCES
 const commonVulnerabilities = [
   { id: "CVE-2017-0144", control: "Network Segmentation" },
   { id: "CVE-2017-5638", control: "Patch Apache Struts" },
@@ -33,6 +39,72 @@ const recommendedControls = [
 
 const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolean) => void }) => {
   const { totalRisk } = useAppContext();
+  const { user } = useAuth();
+  // on this page, fetch for all threat actors, so get all overlapping vulnerabilities from the organization service
+  const [overlappingVulnerabilities, setOverlappingVulnerabilities] = useState<OverlappingVulnerability[]>([]); // if none, nothing to show
+  const [organizationControls, setOrganizationControls] = useState<OrganizationControls | undefined>()
+
+  useEffect(() => {
+    const fetchOverlappingVulnerabilities = async () => {
+      try {
+        
+        if (user?.organization?.id) {
+          const data = await organizationsService.getOverlappingVulnerabilities(user?.organization?.id, null);
+          setOverlappingVulnerabilities(data.overlappingVulnerabilities);
+        }
+      } catch (error) {
+        console.error('Error fetching overlapping vulnerabilities:', error);
+        setOverlappingVulnerabilities([]);
+      }
+    };
+
+    fetchOverlappingVulnerabilities();
+  }, [user?.organization?.id]);
+
+  useEffect(() => {
+    const fetchOrganizationControls = async () => {
+      try {
+        if (user?.organization?.id) {
+          const response: OrganizationControls = await organizationControlsService.getAll(user.organization.id);
+          console.log(response)
+          setOrganizationControls(response);
+        }
+      } catch (error) {
+        console.error('Error fetching organization controls:', error);
+        setOrganizationControls(undefined); // or set to a default value
+      }
+    };
+
+    fetchOrganizationControls();
+  }, [user?.organization?.id]);
+
+  const handleFetchControls = async (organizationId: string) => {
+    try {
+      const response: OrganizationControls = await organizationControlsService.getAll(organizationId);
+      setOrganizationControls(response);
+    } catch (error) {
+      console.error('Error fetching controls:', error);
+    }
+  };
+
+  const handleAddControl = async (organizationId: string, controlName: string) => {
+    try {
+      const response: OrganizationControlsResponse = await organizationControlsService.create(organizationId, controlName);
+      setOrganizationControls(response.organizationControls); 
+    } catch (error) {
+      console.error('Error adding control:', error);
+    }
+  };
+
+  const handleRemoveControl = async (organizationId: string, controlName: string) => {
+    try {
+      const response = await organizationControlsService.remove(organizationId, controlName);
+      // After successful removal, refetch the controls to update state
+      await handleFetchControls(organizationId);
+    } catch (error) {
+      console.error('Error removing control:', error);
+    }
+  };
 
   const initialCosts: CostItem[] = [
     { control: "Network Segmentation", purchase: 5, operational: 5, training: 3, manpower: 2 },
@@ -41,6 +113,9 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   ];
   const [costs, setCosts] = useState<CostItem[]>(initialCosts);
 
+  // if (!overlappingVulnerabilities || overlappingVulnerabilities.length === 0) {
+  //   return <div>nothing to see here</div>;
+  // }
   return (
     <div className="flex min-h-screen bg-gray-900 text-white">
       {/* Sidebar Navigation */}
@@ -57,6 +132,15 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
       {/* Main Content */}
       <div className="w-3/4 p-6 overflow-y-auto space-y-8">
         <h1 className="text-3xl font-bold mb-6">Security Controls Analysis & ROSI Calculation</h1>
+
+        {/* Organisation Controls */}
+        <OrganizationControlsCard
+          controls={organizationControls?.controls || []}
+          onAddControl={(controlName) => handleAddControl(user?.organization?.id!, controlName)}
+          onRemoveControl={(controlName) => handleRemoveControl(user?.organization?.id!, controlName)}
+          loading={false}
+          organizationName={user?.organization?.name}
+        />
 
         {/* Vulnerability-Control Mapping */}
         <Card className="bg-gray-300 text-black p-6">
@@ -94,17 +178,6 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
                   </tr>
                 );
               })}
-              <tr>
-                <td colSpan={7} className="p-2 font-semibold text-left bg-gray-100 border-t">Additional Controls</td>
-              </tr>
-              <tr>
-                <td className="p-2 border" colSpan={2}>MS17-010 Patch</td>
-                <td className="p-2 border">{totalRisk.toFixed(2)}</td>
-                <td className="p-2 border">0.95</td>
-                <td className="p-2 border">0.4</td>
-                <td className="p-2 border">60</td>
-                <td className="p-2 border">{(totalRisk * 0.95 - 0.4 * 60).toFixed(2)}</td>
-              </tr>
             </tbody>
           </table>
         </Card>
