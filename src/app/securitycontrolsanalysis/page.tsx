@@ -9,11 +9,14 @@ import type { CostItem } from "./controlcostsanalysis";
 import EvaluationSuggestion from "@/components/evaluationsuggestion";
 import ControlCostsAnalysis from "./controlcostsanalysis";
 import ControlSelectionMatrix from "./controlselectionmatrix";
+
+// context
 import { useAppContext } from "@/context/appcontext";
 import { useAuth } from "@/context/authContext";
 
 // components
 import OrganizationControlsCard from "./OrganisationControlsCard";
+import VulnerabilityControlMappingCard from "./vulnerabilityControlMappingCard";
 
 // types
 import { OverlappingVulnerability } from '../../types/vulnerabilities';
@@ -43,6 +46,10 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   // on this page, fetch for all threat actors, so get all overlapping vulnerabilities from the organization service
   const [overlappingVulnerabilities, setOverlappingVulnerabilities] = useState<OverlappingVulnerability[]>([]); // if none, nothing to show
   const [organizationControls, setOrganizationControls] = useState<OrganizationControls | undefined>()
+  // to re-render components once data is ready
+  const [dataReady, setDataReady] = useState(false);
+  const [vulnsLoaded, setVulnsLoaded] = useState(false);
+  const [controlsLoaded, setControlsLoaded] = useState(false);
 
   useEffect(() => {
     const fetchOverlappingVulnerabilities = async () => {
@@ -50,11 +57,17 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         
         if (user?.organization?.id) {
           const data = await organizationsService.getOverlappingVulnerabilities(user?.organization?.id, null);
+          // for vuln in data.overla:
+          //   if vuln.status != patched:
+          //    add to dat
+          console.log('overlapping vulns: ', data.overlappingVulnerabilities)
           setOverlappingVulnerabilities(data.overlappingVulnerabilities);
         }
       } catch (error) {
         console.error('Error fetching overlapping vulnerabilities:', error);
         setOverlappingVulnerabilities([]);
+      } finally {
+        setVulnsLoaded(true);
       }
     };
 
@@ -66,12 +79,14 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
       try {
         if (user?.organization?.id) {
           const response: OrganizationControls = await organizationControlsService.getAll(user.organization.id);
-          console.log(response)
+          console.log('org controls', response)
           setOrganizationControls(response);
         }
       } catch (error) {
         console.error('Error fetching organization controls:', error);
         setOrganizationControls(undefined); // or set to a default value
+      } finally {
+        setControlsLoaded(true);
       }
     };
 
@@ -105,6 +120,15 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
       console.error('Error removing control:', error);
     }
   };
+
+  useEffect(() => {
+    if (vulnsLoaded && controlsLoaded) {
+      console.log('🎯 Both API calls completed, data ready!');
+      console.log('Final vulnerabilities count:', overlappingVulnerabilities.length);
+      console.log('Final controls count:', organizationControls?.controls?.length || 0);
+      setDataReady(true);
+    }
+  }, [overlappingVulnerabilities, organizationControls, vulnsLoaded, controlsLoaded]);
 
   const initialCosts: CostItem[] = [
     { control: "Network Segmentation", purchase: 5, operational: 5, training: 3, manpower: 2 },
@@ -143,7 +167,31 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         />
 
         {/* Vulnerability-Control Mapping */}
-        <Card className="bg-gray-300 text-black p-6">
+        {/* Vulnerability-Control Mapping */}
+        {vulnsLoaded && controlsLoaded ? (
+          <VulnerabilityControlMappingCard
+            overlappingVulnerabilities={overlappingVulnerabilities}
+            controls={organizationControls?.controls || []}
+            userId={user?.id || ""}
+            organizationId={user?.organization?.id || ""}
+            totalRisk={totalRisk}
+            loading={false}
+          />
+        ) : (
+          <Card className="bg-gray-300 text-black p-6">
+            <h2 className="text-xl font-semibold mb-4">Vulnerability-Control Mapping</h2>
+            <div className="text-center py-4">
+              <div className="space-y-2">
+                <p>Loading data...</p>
+                <div className="text-sm text-gray-600">
+                  <p>Vulnerabilities: {vulnsLoaded ? '✅ Loaded' : '⏳ Loading...'}</p>
+                  <p>Controls: {controlsLoaded ? '✅ Loaded' : '⏳ Loading...'}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+        {/* <Card className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">Vulnerability-Control Mapping</h2>
           <p><strong>Controls in Org:</strong> System Updated, Web Application Firewall</p>
           <p><strong>Recommended Controls from CTI:</strong> {recommendedControls.join(", ")}</p>
@@ -180,7 +228,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
               })}
             </tbody>
           </table>
-        </Card>
+        </Card> */}
 
         {/* Interaction Effect Analysis */}
         <Card className="bg-gray-300 text-black p-6">
