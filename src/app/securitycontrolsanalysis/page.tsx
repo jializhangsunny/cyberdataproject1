@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import type { CostItem } from "./controlcostsanalysis";
 import EvaluationSuggestion from "@/components/evaluationsuggestion";
 import ControlSelectionMatrix from "./controlselectionmatrix";
 
@@ -20,19 +19,14 @@ import ControlCostsAnalysis from "./controlcostsanalysis";
 import InteractionEffectsAnalysis from "./InteractionEffectsAnalysis";
 
 // types
+import type { CostItem } from "./controlcostsanalysis";
 import { OverlappingVulnerability } from '../../types/vulnerabilities';
 import { OrganizationControls, OrganizationControlsResponse } from "@/types/organizationControls";
+import { NetRiskReductionData } from "@/types/netRiskReduction";
 
 // services
 import organizationsService from "@/services/organizations";
 import organizationControlsService from "@/services/organizationControls"
-
-const recommendedControls = [
-  "Patch Apache Struts",
-  "Network Segmentation",
-  "MS17-010 Patch",
-  "Web Application Firewall",
-];
 
 const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolean) => void }) => {
   const { totalRisk } = useAppContext();
@@ -44,6 +38,10 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   const [dataReady, setDataReady] = useState(false);
   const [vulnsLoaded, setVulnsLoaded] = useState(false);
   const [controlsLoaded, setControlsLoaded] = useState(false);
+  // lifting state
+  const [riskData, setRiskData] = useState<NetRiskReductionData[]>([]);
+  const [costData, setCostData] = useState<CostItem[]>([]);
+
 
   useEffect(() => {
     const fetchOverlappingVulnerabilities = async () => {
@@ -211,7 +209,14 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         />
 
         {/* Control Selection Matrix */}
-        <ControlSelectionMatrix costs={costs} />
+        <ControlSelectionMatrix 
+          controls={organizationControls?.controls || []}
+          userId={user?.id || ""}
+          organizationId={user?.organization?.id || ""}
+          riskData={riskData} // Pass the risk data from VulnerabilityControlMappingCard
+          costData={costData} // Pass the cost data from ControlCostsAnalysis
+          loading={!controlsLoaded}
+        />
 
         {/* Budget Info */}
         <Card className="bg-gray-300 text-black p-6">

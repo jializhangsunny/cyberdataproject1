@@ -69,7 +69,7 @@ const ControlCostsAnalysis: React.FC<Props> = ({
             console.log(`✅ Found existing cost analysis: ${control}`);
             // Use existing data
             const totalCost = existing.purchaseCost + existing.operationalCost + 
-                             existing.trainingCost + existing.manpowerCost;
+                              existing.trainingCost + existing.manpowerCost;
             initialData.push({
               id: existing.id,
               control: control,
@@ -141,7 +141,7 @@ const ControlCostsAnalysis: React.FC<Props> = ({
         
         // Recalculate total cost
         updated.totalCost = updated.purchaseCost + updated.operationalCost + 
-                           updated.trainingCost + updated.manpowerCost;
+                            updated.trainingCost + updated.manpowerCost;
         return updated;
       }
       return item;
