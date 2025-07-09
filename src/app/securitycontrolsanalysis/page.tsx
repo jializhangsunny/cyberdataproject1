@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 
 import type { CostItem } from "./controlcostsanalysis";
 import EvaluationSuggestion from "@/components/evaluationsuggestion";
-import ControlCostsAnalysis from "./controlcostsanalysis";
 import ControlSelectionMatrix from "./controlselectionmatrix";
 
 // context
@@ -17,6 +16,8 @@ import { useAuth } from "@/context/authContext";
 // components
 import OrganizationControlsCard from "./OrganisationControlsCard";
 import VulnerabilityControlMappingCard from "./vulnerabilityControlMappingCard";
+import ControlCostsAnalysis from "./controlcostsanalysis";
+import InteractionEffectsAnalysis from "./InteractionEffectsAnalysis";
 
 // types
 import { OverlappingVulnerability } from '../../types/vulnerabilities';
@@ -25,13 +26,6 @@ import { OrganizationControls, OrganizationControlsResponse } from "@/types/orga
 // services
 import organizationsService from "@/services/organizations";
 import organizationControlsService from "@/services/organizationControls"
-
-
-// TODO: REMOVE ALL COMMON VULN REFERENCES
-const commonVulnerabilities = [
-  { id: "CVE-2017-0144", control: "Network Segmentation" },
-  { id: "CVE-2017-5638", control: "Patch Apache Struts" },
-];
 
 const recommendedControls = [
   "Patch Apache Struts",
@@ -131,9 +125,9 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   }, [overlappingVulnerabilities, organizationControls, vulnsLoaded, controlsLoaded]);
 
   const initialCosts: CostItem[] = [
-    { control: "Network Segmentation", purchase: 5, operational: 5, training: 3, manpower: 2 },
-    { control: "MS17-010 Patch", purchase: 12, operational: 4, training: 4, manpower: 7 },
-    { control: "Patch Apache Struts", purchase: 30, operational: 20, training: 10, manpower: 22.8 },
+    { control: "Network Segmentation", purchaseCost: 5, operationalCost: 5, trainingCost: 3, manpowerCost: 2 },
+    { control: "MS17-010 Patch", purchaseCost: 12, operationalCost: 4, trainingCost: 4, manpowerCost: 7 },
+    { control: "Patch Apache Struts", purchaseCost: 30, operationalCost: 20, trainingCost: 10, manpowerCost: 22.8 },
   ];
   const [costs, setCosts] = useState<CostItem[]>(initialCosts);
 
@@ -167,7 +161,6 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         />
 
         {/* Vulnerability-Control Mapping */}
-        {/* Vulnerability-Control Mapping */}
         {vulnsLoaded && controlsLoaded ? (
           <VulnerabilityControlMappingCard
             overlappingVulnerabilities={overlappingVulnerabilities}
@@ -191,68 +184,31 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
             </div>
           </Card>
         )}
-        {/* <Card className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">Vulnerability-Control Mapping</h2>
-          <p><strong>Controls in Org:</strong> System Updated, Web Application Firewall</p>
-          <p><strong>Recommended Controls from CTI:</strong> {recommendedControls.join(", ")}</p>
-          <table className="mt-4 w-full text-sm border border-gray-400">
-            <thead className="bg-gray-200 text-black">
-              <tr>
-                <th className="p-2 border">Vulnerability ID</th>
-                <th className="p-2 border">Control 1 Name</th>
-                <th className="p-2 border">Initial Risk ($M)</th>
-                <th className="p-2 border">Risk Reduction Degree (Rd)</th>
-                <th className="p-2 border">New Vulnerability Possibility</th>
-                <th className="p-2 border">Potential New Risk</th>
-                <th className="p-2 border">Net Risk Reduction (NRR)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {commonVulnerabilities.map((vul, i) => {
-                const control = vul.control;
-                const rd = i === 0 ? 0.8 : 0.9;
-                const newProb = i === 0 ? 0.3 : 0.2;
-                const newRisk = i === 0 ? 10 : 100;
-                const nrr = totalRisk * rd - newProb * newRisk;
-                return (
-                  <tr key={vul.id}>
-                    <td className="p-2 border">{vul.id}</td>
-                    <td className="p-2 border">{control}</td>
-                    <td className="p-2 border">{totalRisk.toFixed(2)}</td>
-                    <td className="p-2 border">{rd}</td>
-                    <td className="p-2 border">{newProb}</td>
-                    <td className="p-2 border">{newRisk}</td>
-                    <td className="p-2 border">{nrr.toFixed(2)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card> */}
 
         {/* Interaction Effect Analysis */}
-        <Card className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">Interaction Effect Analysis of Controls</h2>
-          <p className="mb-4"><strong>Note:</strong> Controls may overlap, produce synergies, or conflict with each other.</p>
-          <table className="w-full text-sm border border-gray-400">
-            <thead>
-              <tr>
-                <th className="p-2 border">Interaction Effect</th>
-                <th className="p-2 border">Network Segmentation</th>
-                <th className="p-2 border">Patch Apache Struts</th>
-                <th className="p-2 border">MS17-010 Patch</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td className="p-2 border">Network Segmentation</td><td className="p-2 border text-center">-</td><td className="p-2 border text-center">-</td><td className="p-2 border text-center">-</td></tr>
-              <tr><td className="p-2 border">Patch Apache Struts</td><td className="p-2 border text-center">0.8</td><td className="p-2 border text-center">-</td><td className="p-2 border text-center">-</td></tr>
-              <tr><td className="p-2 border">MS17-010 Patch</td><td className="p-2 border text-center">0.5</td><td className="p-2 border text-center">0.8</td><td className="p-2 border text-center">-</td></tr>
-            </tbody>
-          </table>
-        </Card>
+        {controlsLoaded ? (
+          <InteractionEffectsAnalysis
+            controls={organizationControls?.controls || []}
+            organizationId={user?.organization?.id || ""}
+            userId={user?.id || ""}
+            loading={false}
+          />
+        ) : (
+          <Card className="bg-gray-300 text-black p-6">
+            <h2 className="text-xl font-semibold mb-4">Interaction Effect Analysis</h2>
+            <div className="text-center py-4">
+              <p>Loading controls...</p>
+            </div>
+          </Card>
+        )}
 
         {/* Control Costs Analysis */}
-        <ControlCostsAnalysis costs={costs} setCosts={setCosts} />
+        <ControlCostsAnalysis 
+          controls={organizationControls?.controls || []}
+          userId={user?.id || ""}
+          organizationId={user?.organization?.id || ""}
+          loading={false}
+        />
 
         {/* Control Selection Matrix */}
         <ControlSelectionMatrix costs={costs} />
@@ -263,7 +219,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
           {(() => {
             const totalBudget = 200;
             const totalCost = costs.reduce((sum, item) =>
-              sum + item.purchase + item.operational + item.training + item.manpower, 0);
+              sum + item.purchaseCost + item.operationalCost + item.trainingCost + item.manpowerCost, 0);
             const budgetStatus = totalCost <= totalBudget ? "Within Budget" : "Exceeds Budget";
 
             return (
