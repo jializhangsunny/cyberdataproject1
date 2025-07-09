@@ -167,6 +167,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
             organizationId={user?.organization?.id || ""}
             totalRisk={totalRisk}
             loading={false}
+            onDataChange={setRiskData}
           />
         ) : (
           <Card className="bg-gray-300 text-black p-6">
@@ -206,6 +207,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
           userId={user?.id || ""}
           organizationId={user?.organization?.id || ""}
           loading={false}
+          onDataChange={setCostData}
         />
 
         {/* Control Selection Matrix */}

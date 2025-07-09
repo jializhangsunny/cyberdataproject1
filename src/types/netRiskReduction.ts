@@ -17,6 +17,7 @@ export interface VulnerabilityControlMappingProps {
   organizationId: string;
   totalRisk: number;
   loading?: boolean;
+  onDataChange?: (data: NetRiskReductionData[]) => void;
 }
 
 // API request/response types
