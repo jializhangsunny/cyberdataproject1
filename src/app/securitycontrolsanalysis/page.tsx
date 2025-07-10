@@ -35,7 +35,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   const scSteps = [
     { selector: "#tour-vuln-control", content: "Review current vulnerability-control mapping." },
     { selector: "#tour-control-matrix",     content: "Review control matrix and ROCSI analysis." },
-    { selector: "#tour-rocsi-score",      content: "Review ROCSI analysis." },
+    // { selector: "#tour-rocsi-score",      content: "Review ROCSI analysis." },
   ];
 
 
