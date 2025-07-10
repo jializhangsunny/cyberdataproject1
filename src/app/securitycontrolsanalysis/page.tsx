@@ -1,45 +1,147 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import type { CostItem } from "./controlcostsanalysis";
 import EvaluationSuggestion from "@/components/evaluationsuggestion";
-import ControlCostsAnalysis from "./controlcostsanalysis";
 import ControlSelectionMatrix from "./controlselectionmatrix";
+
+// context
 import { useAppContext } from "@/context/appcontext";
+import { useAuth } from "@/context/authContext";
+
+// components
+import OrganizationControlsCard from "./OrganisationControlsCard";
+import VulnerabilityControlMappingCard from "./vulnerabilityControlMappingCard";
+import ControlCostsAnalysis from "./controlcostsanalysis";
+import InteractionEffectsAnalysis from "./InteractionEffectsAnalysis";
+import BudgetInfo from './BudgetInfo';
+
+// types
+import type { CostItem } from "./controlcostsanalysis";
+import { OverlappingVulnerability } from '../../types/vulnerabilities';
+import { OrganizationControls, OrganizationControlsResponse } from "@/types/organizationControls";
+import { NetRiskReductionData } from "@/types/netRiskReduction";
+
+// services
+import organizationsService from "@/services/organizations";
+import organizationControlsService from "@/services/organizationControls"
+
+
 import OnboardingTour from "@/components/OnboardingTour";
-
-const commonVulnerabilities = [
-  { id: "CVE-2017-0144", control: "Network Segmentation" },
-  { id: "CVE-2017-5638", control: "Patch Apache Struts" },
-];
-
-const recommendedControls = [
-  "Patch Apache Struts",
-  "Network Segmentation",
-  "MS17-010 Patch",
-  "Web Application Firewall",
-];
-
-const scSteps = [
-  { selector: "#tour-vuln-control", content: "Review current vulnerability-control mapping." },
-  { selector: "#tour-control-matrix",     content: "Review control matrix and effect." },
-  { selector: "#tour-rocsi-score",      content: "Review ROCSI analysis." },
-];
-
 const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolean) => void }) => {
-  const { totalRisk } = useAppContext();
-
-  const initialCosts: CostItem[] = [
-    { control: "Network Segmentation", purchase: 5, operational: 5, training: 3, manpower: 2 },
-    { control: "MS17-010 Patch", purchase: 12, operational: 4, training: 4, manpower: 7 },
-    { control: "Patch Apache Struts", purchase: 30, operational: 20, training: 10, manpower: 22.8 },
+  const scSteps = [
+    { selector: "#tour-vuln-control", content: "Review current vulnerability-control mapping." },
+    { selector: "#tour-control-matrix",     content: "Review control matrix and ROCSI analysis." },
+    { selector: "#tour-rocsi-score",      content: "Review ROCSI analysis." },
   ];
-  const [costs, setCosts] = useState<CostItem[]>(initialCosts);
 
+
+  const { totalRisk } = useAppContext();
+  const { user } = useAuth();
+  // on this page, fetch for all threat actors, so get all overlapping vulnerabilities from the organization service
+  const [overlappingVulnerabilities, setOverlappingVulnerabilities] = useState<OverlappingVulnerability[]>([]); // if none, nothing to show
+  const [organizationControls, setOrganizationControls] = useState<OrganizationControls | undefined>()
+  // to re-render components once data is ready
+  const [dataReady, setDataReady] = useState(false);
+  const [vulnsLoaded, setVulnsLoaded] = useState(false);
+  const [controlsLoaded, setControlsLoaded] = useState(false);
+  // lifting state
+  const [riskData, setRiskData] = useState<NetRiskReductionData[]>([]);
+  const [costData, setCostData] = useState<CostItem[]>([]);
+
+
+  useEffect(() => {
+    const fetchOverlappingVulnerabilities = async () => {
+      try {
+        
+        if (user?.organization?.id) {
+          const data = await organizationsService.getOverlappingVulnerabilities(user?.organization?.id, null);
+          // for vuln in data.overla:
+          //   if vuln.status != patched:
+          //    add to dat
+          console.log('overlapping vulns: ', data.overlappingVulnerabilities)
+          setOverlappingVulnerabilities(data.overlappingVulnerabilities);
+        }
+      } catch (error) {
+        console.error('Error fetching overlapping vulnerabilities:', error);
+        setOverlappingVulnerabilities([]);
+      } finally {
+        setVulnsLoaded(true);
+      }
+    };
+
+    fetchOverlappingVulnerabilities();
+  }, [user?.organization?.id]);
+
+  useEffect(() => {
+    const fetchOrganizationControls = async () => {
+      try {
+        if (user?.organization?.id) {
+          const response: OrganizationControls = await organizationControlsService.getAll(user.organization.id);
+          console.log('org controls', response)
+          setOrganizationControls(response);
+        }
+      } catch (error) {
+        console.error('Error fetching organization controls:', error);
+        setOrganizationControls(undefined); // or set to a default value
+      } finally {
+        setControlsLoaded(true);
+      }
+    };
+
+    fetchOrganizationControls();
+  }, [user?.organization?.id]);
+
+  const handleFetchControls = async (organizationId: string) => {
+    try {
+      const response: OrganizationControls = await organizationControlsService.getAll(organizationId);
+      setOrganizationControls(response);
+    } catch (error) {
+      console.error('Error fetching controls:', error);
+    }
+  };
+
+  const handleAddControl = async (organizationId: string, controlName: string) => {
+    try {
+      const response: OrganizationControlsResponse = await organizationControlsService.create(organizationId, controlName);
+      setOrganizationControls(response.organizationControls); 
+    } catch (error) {
+      console.error('Error adding control:', error);
+    }
+  };
+
+  const handleRemoveControl = async (organizationId: string, controlName: string) => {
+    try {
+      const response = await organizationControlsService.remove(organizationId, controlName);
+      // After successful removal, refetch the controls to update state
+      await handleFetchControls(organizationId);
+    } catch (error) {
+      console.error('Error removing control:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (vulnsLoaded && controlsLoaded) {
+      console.log('🎯 Both API calls completed, data ready!');
+      console.log('Final vulnerabilities count:', overlappingVulnerabilities.length);
+      console.log('Final controls count:', organizationControls?.controls?.length || 0);
+      setDataReady(true);
+    }
+  }, [overlappingVulnerabilities, organizationControls, vulnsLoaded, controlsLoaded]);
+
+  // const initialCosts: CostItem[] = [
+  //   { control: "Network Segmentation", purchaseCost: 5, operationalCost: 5, trainingCost: 3, manpowerCost: 2 },
+  //   { control: "MS17-010 Patch", purchaseCost: 12, operationalCost: 4, trainingCost: 4, manpowerCost: 7 },
+  //   { control: "Patch Apache Struts", purchaseCost: 30, operationalCost: 20, trainingCost: 10, manpowerCost: 22.8 },
+  // ];
+  // const [costs, setCosts] = useState<CostItem[]>(initialCosts);
+
+  // if (!overlappingVulnerabilities || overlappingVulnerabilities.length === 0) {
+  //   return <div>nothing to see here</div>;
+  // }
   return (
     <div className="flex min-h-screen bg-gray-900 text-white">
       {/* Sidebar Navigation */}
@@ -57,91 +159,88 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
       <div className="w-3/4 p-6 overflow-y-auto space-y-8">
         <h1 className="text-3xl font-bold mb-6">Security Controls Analysis & ROSI Calculation</h1>
 
+        {/* Organisation Controls */}
+        <OrganizationControlsCard
+          controls={organizationControls?.controls || []}
+          onAddControl={(controlName) => handleAddControl(user?.organization?.id!, controlName)}
+          onRemoveControl={(controlName) => handleRemoveControl(user?.organization?.id!, controlName)}
+          loading={false}
+          organizationName={user?.organization?.name}
+        />
+
         {/* Vulnerability-Control Mapping */}
-        <Card id="tour-vuln-control" className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">Vulnerability-Control Mapping</h2>
-          <p><strong>Controls in Org:</strong> System Updated, Web Application Firewall</p>
-          <p><strong>Recommended Controls from CTI:</strong> {recommendedControls.join(", ")}</p>
-          <table className="mt-4 w-full text-sm border border-gray-400">
-            <thead className="bg-gray-200 text-black">
-              <tr>
-                <th className="p-2 border">Vulnerability ID</th>
-                <th className="p-2 border">Control 1 Name</th>
-                <th className="p-2 border">Initial Risk ($M)</th>
-                <th className="p-2 border">Risk Reduction Degree (Rd)</th>
-                <th className="p-2 border">New Vulnerability Possibility</th>
-                <th className="p-2 border">Potential New Risk</th>
-                <th className="p-2 border">Net Risk Reduction (NRR)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {commonVulnerabilities.map((vul, i) => {
-                const control = vul.control;
-                const rd = i === 0 ? 0.8 : 0.9;
-                const newProb = i === 0 ? 0.3 : 0.2;
-                const newRisk = i === 0 ? 10 : 100;
-                const nrr = totalRisk * rd - newProb * newRisk;
-                return (
-                  <tr key={vul.id}>
-                    <td className="p-2 border">{vul.id}</td>
-                    <td className="p-2 border">{control}</td>
-                    <td className="p-2 border">{totalRisk.toFixed(2)}</td>
-                    <td className="p-2 border">{rd}</td>
-                    <td className="p-2 border">{newProb}</td>
-                    <td className="p-2 border">{newRisk}</td>
-                    <td className="p-2 border">{nrr.toFixed(2)}</td>
-                  </tr>
-                );
-              })}
-              <tr>
-                <td colSpan={7} className="p-2 font-semibold text-left bg-gray-100 border-t">Additional Controls</td>
-              </tr>
-              <tr>
-                <td className="p-2 border" colSpan={2}>MS17-010 Patch</td>
-                <td className="p-2 border">{totalRisk.toFixed(2)}</td>
-                <td className="p-2 border">0.95</td>
-                <td className="p-2 border">0.4</td>
-                <td className="p-2 border">60</td>
-                <td className="p-2 border">{(totalRisk * 0.95 - 0.4 * 60).toFixed(2)}</td>
-              </tr>
-            </tbody>
-          </table>
-        </Card>
+        {vulnsLoaded && controlsLoaded ? (
+          <div id="tour-vuln-control">
+            <VulnerabilityControlMappingCard
+              overlappingVulnerabilities={overlappingVulnerabilities}
+              controls={organizationControls?.controls || []}
+              userId={user?.id || ""}
+              organizationId={user?.organization?.id || ""}
+              totalRisk={totalRisk}
+              loading={false}
+              onDataChange={setRiskData}
+            />
+          </div>
+        ) : (
+          <Card className="bg-gray-300 text-black p-6">
+            <h2 className="text-xl font-semibold mb-4">Vulnerability-Control Mapping</h2>
+            <div className="text-center py-4">
+              <div className="space-y-2">
+                <p>Loading data...</p>
+                <div className="text-sm text-gray-600">
+                  <p>Vulnerabilities: {vulnsLoaded ? '✅ Loaded' : '⏳ Loading...'}</p>
+                  <p>Controls: {controlsLoaded ? '✅ Loaded' : '⏳ Loading...'}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Interaction Effect Analysis */}
-        <Card id="tour-control-matrix" className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">Interaction Effect Analysis of Controls</h2>
-          <p className="mb-4"><strong>Note:</strong> Controls may overlap, produce synergies, or conflict with each other.</p>
-          <table className="w-full text-sm border border-gray-400">
-            <thead>
-              <tr>
-                <th className="p-2 border">Interaction Effect</th>
-                <th className="p-2 border">Network Segmentation</th>
-                <th className="p-2 border">Patch Apache Struts</th>
-                <th className="p-2 border">MS17-010 Patch</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td className="p-2 border">Network Segmentation</td><td className="p-2 border text-center">-</td><td className="p-2 border text-center">-</td><td className="p-2 border text-center">-</td></tr>
-              <tr><td className="p-2 border">Patch Apache Struts</td><td className="p-2 border text-center">0.8</td><td className="p-2 border text-center">-</td><td className="p-2 border text-center">-</td></tr>
-              <tr><td className="p-2 border">MS17-010 Patch</td><td className="p-2 border text-center">0.5</td><td className="p-2 border text-center">0.8</td><td className="p-2 border text-center">-</td></tr>
-            </tbody>
-          </table>
-        </Card>
+        {controlsLoaded ? (
+          <InteractionEffectsAnalysis
+            controls={organizationControls?.controls || []}
+            organizationId={user?.organization?.id || ""}
+            userId={user?.id || ""}
+            loading={false}
+          />
+        ) : (
+          <Card className="bg-gray-300 text-black p-6">
+            <h2 className="text-xl font-semibold mb-4">Interaction Effect Analysis</h2>
+            <div className="text-center py-4">
+              <p>Loading controls...</p>
+            </div>
+          </Card>
+        )}
 
         {/* Control Costs Analysis */}
-        <ControlCostsAnalysis costs={costs} setCosts={setCosts} />
+        <ControlCostsAnalysis 
+          controls={organizationControls?.controls || []}
+          userId={user?.id || ""}
+          organizationId={user?.organization?.id || ""}
+          loading={false}
+          onDataChange={setCostData}
+        />
 
         {/* Control Selection Matrix */}
-        <ControlSelectionMatrix costs={costs} />
+        <div id="tour-control-matrix">
+          <ControlSelectionMatrix 
+            controls={organizationControls?.controls || []}
+            userId={user?.id || ""}
+            organizationId={user?.organization?.id || ""}
+            riskData={riskData} // Pass the risk data from VulnerabilityControlMappingCard
+            costData={costData} // Pass the cost data from ControlCostsAnalysis
+            loading={!controlsLoaded}
+          />
+        </div>
 
         {/* Budget Info */}
-        <Card className="bg-gray-300 text-black p-6">
+        {/* <Card className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">Budget Information</h2>
           {(() => {
             const totalBudget = 200;
             const totalCost = costs.reduce((sum, item) =>
-              sum + item.purchase + item.operational + item.training + item.manpower, 0);
+              sum + item.purchaseCost + item.operationalCost + item.trainingCost + item.manpowerCost, 0);
             const budgetStatus = totalCost <= totalBudget ? "Within Budget" : "Exceeds Budget";
 
             return (
@@ -152,10 +251,18 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
               </div>
             );
           })()}
-        </Card>
+        </Card> */}
+        <BudgetInfo 
+          userId={user?.id}
+          organizationId={user?.organization?.id}
+          onBudgetUpdate={() => {
+            // Optional: Refresh other components when budget changes
+            console.log('Budget updated');
+          }}
+        />
 
         {/* ROSI */}
-        <Card id="tour-rocsi-score" className="bg-gray-300 text-black p-6">
+        {/* <Card className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">ROCSI Analysis</h2>
           <p>Return on Control Security Investment (ROCSI) based on selected controls.</p>
           <table className="w-full text-sm border border-gray-400 mt-4">
@@ -176,11 +283,11 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
     const ms17Cost = 27;
     const patchApacheCost = 82.8 ;
     const totalCost = ms17Cost + patchApacheCost;
-   const totalRosci = ((totalNRR * 1.8) - totalCost) / totalCost;
+   const totalRosci = ((totalNRR * 1.8) - totalCost) / totalCost; */}
 
 
 
-    return (
+    {/* return (
       <tr>
         <td className="p-2 border">1) Patch Apache Struts<br />2) MS17-010 Patch</td>
         <td className="p-2 border">{totalNRR.toFixed(2)}</td>
@@ -192,7 +299,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   })()}
 </tbody>
           </table>
-        </Card>
+        </Card> */}
 
         <button onClick={() => setShowModal(true)}
                 className="fixed bottom-6 right-6 z-40

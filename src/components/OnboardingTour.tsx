@@ -35,7 +35,7 @@ export default function OnboardingTour({
 
       styles={{
         /* ubble */
-        popover: (base): CSSProperties => ({
+        popover: (base: any): CSSProperties => ({
           ...base,
           background: "#2563eb",
           color: "#f3f4f6",
@@ -56,7 +56,7 @@ export default function OnboardingTour({
           padding: "8px 20px",
               }),
 
-          close: (base) => ({
+          close: (base: any) => ({
   ...base,
 color: "#ffffff",
 stroke: "#ffffff",
@@ -66,7 +66,7 @@ strokeWidth: 1.5,
   right: 20,
 cursor: "pointer",
         }),
-        maskWrapper: (base) => ({
+        maskWrapper: (base: any) => ({
           ...base,
           background: maskBg,
         }),
