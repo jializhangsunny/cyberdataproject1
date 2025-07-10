@@ -17,6 +17,7 @@ import OrganizationControlsCard from "./OrganisationControlsCard";
 import VulnerabilityControlMappingCard from "./vulnerabilityControlMappingCard";
 import ControlCostsAnalysis from "./controlcostsanalysis";
 import InteractionEffectsAnalysis from "./InteractionEffectsAnalysis";
+import BudgetInfo from './BudgetInfo';
 
 // types
 import type { CostItem } from "./controlcostsanalysis";
@@ -221,7 +222,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         />
 
         {/* Budget Info */}
-        <Card className="bg-gray-300 text-black p-6">
+        {/* <Card className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">Budget Information</h2>
           {(() => {
             const totalBudget = 200;
@@ -237,10 +238,18 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
               </div>
             );
           })()}
-        </Card>
+        </Card> */}
+        <BudgetInfo 
+          userId={user?.id}
+          organizationId={user?.organization?.id}
+          onBudgetUpdate={() => {
+            // Optional: Refresh other components when budget changes
+            console.log('Budget updated');
+          }}
+        />
 
         {/* ROSI */}
-        <Card className="bg-gray-300 text-black p-6">
+        {/* <Card className="bg-gray-300 text-black p-6">
           <h2 className="text-xl font-semibold mb-4">ROCSI Analysis</h2>
           <p>Return on Control Security Investment (ROCSI) based on selected controls.</p>
           <table className="w-full text-sm border border-gray-400 mt-4">
@@ -261,11 +270,11 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
     const ms17Cost = 27;
     const patchApacheCost = 82.8 ;
     const totalCost = ms17Cost + patchApacheCost;
-   const totalRosci = ((totalNRR * 1.8) - totalCost) / totalCost;
+   const totalRosci = ((totalNRR * 1.8) - totalCost) / totalCost; */}
 
 
 
-    return (
+    {/* return (
       <tr>
         <td className="p-2 border">1) Patch Apache Struts<br />2) MS17-010 Patch</td>
         <td className="p-2 border">{totalNRR.toFixed(2)}</td>
@@ -277,7 +286,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   })()}
 </tbody>
           </table>
-        </Card>
+        </Card> */}
 
         <button onClick={() => setShowModal(true)} className="mt-4 bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600">
           Show Evaluation Suggestion

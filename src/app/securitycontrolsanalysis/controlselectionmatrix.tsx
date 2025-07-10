@@ -194,7 +194,8 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
               {controls.map(control => (
                 <th key={control} className="p-2 border bg-gray-200 text-center min-w-32">
                   <div className="text-xs font-medium">
-                    {control.length > 20 ? `${control.substring(0, 20)}...` : control}
+                    {/* {control.length > 20 ? `${control.substring(0, 20)}...` : control} */}
+                    {control}
                   </div>
                 </th>
               ))}
@@ -297,12 +298,12 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
               <div className="text-green-700">${totalSelectedNRR.toFixed(2)}M</div>
             </div>
             <div>
-              <span className="font-medium">Total Synergy:</span>
+              <span className="font-medium">Total Interaction Effect:</span>
               <div className="text-purple-700">{totalSynergyEffect.toFixed(2)}</div>
             </div>
           </div>
           <div className="mt-2 pt-2 border-t">
-            <span className="font-medium">Combined ROSI: </span>
+            <span className="font-medium">Total ROSI: </span>
             <span className={`font-bold text-lg ${combinedROSI >= 0 ? 'text-green-700' : 'text-red-700'}`}>
               {combinedROSI.toFixed(3)}
             </span>
