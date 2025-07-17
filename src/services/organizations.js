@@ -30,8 +30,12 @@ const remove = async (id) => {
 }
 
 const addVulnerability = async (id, vulnerabilityData) => {
-    const response = await axios.post(`${baseUrl}/${id}/vulnerabilities`, vulnerabilityData)
-    return response.data
+    const dataWithOrgId = {
+        ...vulnerabilityData,
+        organizationId: id
+    };
+    const response = await axios.post(`${baseVulnUrl}`, dataWithOrgId);
+    return response.data;
 }
 
 const updateVulnerability = async (id, vulnerabilityId, vulnerabilityData) => {
@@ -40,7 +44,7 @@ const updateVulnerability = async (id, vulnerabilityId, vulnerabilityData) => {
 }
 
 const removeVulnerability = async (id, vulnerabilityId) => {
-    const response = await axios.delete(`${baseUrl}/${id}/vulnerabilities/${vulnerabilityId}`)
+    const response = await axios.delete(`${baseVulnUrl}/${vulnerabilityId}`)
     return response.data
 }
 
