@@ -270,7 +270,7 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
 
             {/* Individual ROSI Row */}
             <tr>
-              <td className="p-2 border font-medium bg-gray-100">Individual ROSI</td>
+              <td className="p-2 border font-medium bg-gray-100">Individual ROSI ($M)</td>
               {controls.map(control => {
                 const controlData = selectionData.find(item => item.controlName === control);
                 const rosi = controlData?.individualROSI || 0;
@@ -312,7 +312,7 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
           <div className="mt-2 pt-2 border-t">
             <span className="font-medium">Total ROSI: </span>
             <span className={`font-bold text-lg ${combinedROSI >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-              {combinedROSI.toFixed(3)}
+              {combinedROSI.toFixed(3)} ($M)
             </span>
           </div>
         </Card>
