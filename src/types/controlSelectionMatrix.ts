@@ -94,7 +94,8 @@ export interface ControlSelectionMatrix {
   updatedAt?: string;
   user?: {
     id: string
-  }
+  };
+  onSelectionChange?: () => void;
 }
 
 export interface ControlSelectionMatrixResponse {
@@ -104,6 +105,7 @@ export interface ControlSelectionMatrixResponse {
   organizationName?: string;
   totalSelections: number;
   selections: ControlSelectionMatrix[];
+  onSelectionChange?: () => void;
 }
 
 export interface ControlSelectionSummary {
@@ -117,6 +119,7 @@ export interface ControlSelectionSummary {
   totalSynergyEffect: number;
   combinedROSI: number;
   selections: ControlSelectionMatrix[];
+  onSelectionChange?: () => void;
 }
 
 export interface ControlSelectionMatrixProps {
@@ -133,6 +136,7 @@ export interface ControlSelectionMatrixProps {
     totalCost?: number;
   }>;
   loading?: boolean;
+  onSelectionChange?: () => void;
 }
 
 // Add this import if not already present

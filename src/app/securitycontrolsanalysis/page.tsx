@@ -52,6 +52,8 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   const [riskData, setRiskData] = useState<NetRiskReductionData[]>([]);
   const [costData, setCostData] = useState<CostItem[]>([]);
 
+  const [budgetRefreshTrigger, setBudgetRefreshTrigger] = useState(0);
+
 
   useEffect(() => {
     const fetchOverlappingVulnerabilities = async () => {
@@ -143,7 +145,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   //   return <div>nothing to see here</div>;
   // }
   return (
-    <div className="flex min-h-screen bg-gray-900 text-white">
+    <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar Navigation */}
       <div className="w-1/4 bg-gray-800 p-6">
         <h2 className="text-2xl font-bold mb-4">Navigation</h2>
@@ -178,7 +180,10 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
               organizationId={user?.organization?.id || ""}
               totalRisk={totalRisk}
               loading={false}
-              onDataChange={setRiskData}
+              onDataChange={(newRiskData) =>{
+                setRiskData(newRiskData);
+                // setBudgetRefreshTrigger(prev => prev + 1)
+              }}
             />
           </div>
         ) : (
@@ -219,7 +224,10 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
           userId={user?.id || ""}
           organizationId={user?.organization?.id || ""}
           loading={false}
-          onDataChange={setCostData}
+          onDataChange={(newCostData) => {
+            setCostData(newCostData);
+            // setBudgetRefreshTrigger(prev => prev + 1);
+          }}
         />
 
         {/* Control Selection Matrix */}
@@ -231,6 +239,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
             riskData={riskData} // Pass the risk data from VulnerabilityControlMappingCard
             costData={costData} // Pass the cost data from ControlCostsAnalysis
             loading={!controlsLoaded}
+            onSelectionChange={() => setBudgetRefreshTrigger(prev => prev + 1)}
           />
         </div>
 
@@ -259,6 +268,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
             // Optional: Refresh other components when budget changes
             console.log('Budget updated');
           }}
+          refreshTrigger={budgetRefreshTrigger}
         />
 
         {/* ROSI */}

@@ -221,47 +221,6 @@ function HomeContent() {
     }
   }, [user?.id, preferencesLoading, hasLoadedAllPreferences, isFirstTimeUser, hasCheckedFirstTime]);
 
-  // useEffect(() => {
-  //   if (!isSaving.current && preferences && selectedThreatActor) {
-  //     // Only update if preferences are for the current threat actor
-  //     console.log(motivationAnalysis)
-  //     if (preferences.threatActorId === selectedThreatActor.id && 
-  //         motivationAnalysis.length > 0 && 
-  //         contextGoalsAnalysis.length > 0) {
-        
-  //       console.log('Preferences loaded for current threat actor, syncing local state');
-        
-  //       // Update local state with the loaded preference values
-  //       const motivationWeights: { [key: string]: number } = {};
-  //       const motivationRelevance: { [key: string]: string } = {};
-  //       motivationAnalysis.forEach(motivation => {
-  //         motivationWeights[motivation.motivationId] = motivation.weight;
-  //         motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
-  //       });
-        
-  //       const goalWeights: { [key: string]: number } = {};
-  //       const goalRelevance: { [key: string]: string } = {};
-  //       contextGoalsAnalysis.forEach(goal => {
-  //         goalWeights[goal.goalId] = goal.weight;
-  //         goalRelevance[goal.goalId] = goal.relevanceLevel;
-  //       });
-
-  //       console.log(motivationAnalysis)
-        
-  //       setLocalMotivationWeights(motivationWeights);
-  //       setLocalGoalWeights(goalWeights);
-  //       setLocalMotivationRelevanceLevels(motivationRelevance);
-  //       setLocalGoalRelevanceLevels(goalRelevance);
-  //       setLocalW1(sophisticationWeight);
-  //       setLocalW2(resourceWeight);
-  //     }
-  //   }
-  // }, [preferences?.updatedAt, selectedThreatActor?.id]);
-
-  // Replace your useEffect with this debug version to see what's failing:
-
-// Replace your debug useEffect with this fixed version:
-
   useEffect(() => {
     if (!isSaving.current && preferences && selectedThreatActor) {
       // Fix: Use threatActorId.id instead of threatActorId
@@ -608,7 +567,31 @@ const handleSavePreferences = async () => {
       {/* Sidebar Navigation */}
       <div className="w-1/4 bg-gray-800 p-6">
         {/* User Info Section */}
-        <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+
+        <h2 className="text-2xl font-bold mb-4">Navigation</h2>
+        <nav className="flex flex-col space-y-4">
+          <Link
+            href="/"
+            className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
+            Threat Actor Analysis
+          </Link>
+          <Link
+            href="/vulnerabilityanalysis"
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
+            Vulnerability Analysis
+          </Link>
+          <Link
+            href="/riskanalysis"
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
+            Risk Analysis
+          </Link>
+          <Link
+            href="/securitycontrolsanalysis"
+            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
+            Security Controls Analysis and ROSI Calculation
+          </Link>
+
+          <div className="mb-6 p-4 bg-gray-700 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
@@ -634,32 +617,9 @@ const handleSavePreferences = async () => {
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">Navigation</h2>
-        <nav className="flex flex-col space-y-4">
-          <Link
-            href="/"
-            className="p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors">
-            Threat Actor Analysis
-          </Link>
-          <Link
-            href="/vulnerabilityanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
-            Vulnerability Analysis
-          </Link>
-          <Link
-            href="/riskanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
-            Risk Analysis
-          </Link>
-          <Link
-            href="/securitycontrolsanalysis"
-            className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
-            Security Controls Analysis and ROSI Calculation
-          </Link>
-
 
           {/* Admin-only User Management Link */}
-          {hasRole(['admin']) && (
+          {/* {hasRole(['admin']) && (
             <Link
               href="/users"
               className="p-3 bg-purple-700 text-white rounded-md hover:bg-purple-600 transition-colors border-l-4 border-purple-400">
@@ -668,11 +628,11 @@ const handleSavePreferences = async () => {
                 <span className="text-xs bg-purple-500 px-2 py-1 rounded">ADMIN</span>
               </div>
             </Link>
-          )}
+          )} */}
         </nav>
 
         {/* User Role Info */}
-        <div className="mt-6 p-3 bg-gray-700 rounded-lg">
+        {/* <div className="mt-6 p-3 bg-gray-700 rounded-lg">
           <h4 className="text-sm font-semibold text-gray-300 mb-2">Access Level</h4>
           <div className="text-xs text-gray-400">
             {user?.type === 'admin' && (
@@ -697,7 +657,7 @@ const handleSavePreferences = async () => {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Main Content */}

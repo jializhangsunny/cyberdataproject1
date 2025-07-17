@@ -6,12 +6,14 @@ interface BudgetInfoProps {
   userId: string | undefined;
   organizationId: string | undefined;
   onBudgetUpdate?: () => void;
+  refreshTrigger?: number; 
 }
 
 const BudgetInfo: React.FC<BudgetInfoProps> = ({ 
   userId, 
   organizationId,
-  onBudgetUpdate 
+  onBudgetUpdate,
+  refreshTrigger
 }) => {
   const [budgetData, setBudgetData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ const BudgetInfo: React.FC<BudgetInfoProps> = ({
 
   useEffect(() => {
     fetchBudgetAnalysis();
-  }, [userId, organizationId]);
+  }, [userId, organizationId, refreshTrigger]);
 
   // Handle budget update
   const handleUpdateBudget = async () => {

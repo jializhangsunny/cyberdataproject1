@@ -16,7 +16,8 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
   organizationId,
   riskData,
   costData,
-  loading = false
+  loading = false,
+  onSelectionChange
 }) => {
   const [selectionData, setSelectionData] = useState<ControlSelectionData[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -24,6 +25,9 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
 
   useEffect(() => {
     loadSelectionData();
+    if (onSelectionChange) {
+      onSelectionChange();
+    }
   }, [controls, userId, organizationId, riskData, costData]);
 
   const loadSelectionData = async () => {
@@ -136,6 +140,9 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
           ? { ...item, id: response.id }
           : item
       ));
+    }
+    if (onSelectionChange) {
+      onSelectionChange();
     }
   } catch (error: any) {
     console.error('❌ Error updating selection for:', controlName, error);
