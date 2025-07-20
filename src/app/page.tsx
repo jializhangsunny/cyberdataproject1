@@ -154,7 +154,7 @@ function HomeContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
-  const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+  // const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
   const [hasCheckedFirstTime, setHasCheckedFirstTime] = useState(false);
 
   // Form state - these will be synced with user preferences
@@ -209,17 +209,17 @@ function HomeContent() {
     setOrgSector(user?.organization?.sector || "Energy");
   }, [user]);
 
-  useEffect(() => {
-    // Only check after we've loaded all preferences and haven't checked yet
-    if (user?.id && !preferencesLoading && hasLoadedAllPreferences && !hasCheckedFirstTime) {
-      const isFirstTime = isFirstTimeUser();
+  // useEffect(() => {
+  //   // Only check after we've loaded all preferences and haven't checked yet
+  //   if (user?.id && !preferencesLoading && hasLoadedAllPreferences && !hasCheckedFirstTime) {
+  //     const isFirstTime = isFirstTimeUser();
       
-      if (isFirstTime) {
-        setShowWelcomeBanner(true);
-      }
-      setHasCheckedFirstTime(true);
-    }
-  }, [user?.id, preferencesLoading, hasLoadedAllPreferences, isFirstTimeUser, hasCheckedFirstTime]);
+  //     if (isFirstTime) {
+  //       setShowWelcomeBanner(true);
+  //     }
+  //     setHasCheckedFirstTime(true);
+  //   }
+  // }, [user?.id, preferencesLoading, hasLoadedAllPreferences, isFirstTimeUser, hasCheckedFirstTime]);
 
   useEffect(() => {
     if (!isSaving.current && preferences && selectedThreatActor) {
@@ -446,7 +446,7 @@ const handleSavePreferences = async () => {
     });
 
     // Hide welcome banner after successful save (user is no longer first-time)
-    setShowWelcomeBanner(false);
+    // setShowWelcomeBanner(false);
     
     alert('Preferences saved successfully for ' + selectedThreatActor.name + '!');
   } catch (err) {
@@ -532,7 +532,7 @@ const handleSavePreferences = async () => {
     <div className="flex h-screen bg-gray-900 text-white">
 
       {/* Welcome Banner for First Time Users */}
-      {showWelcomeBanner && (
+      {/* {showWelcomeBanner && (
         <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 z-50 shadow-lg border-b-4 border-blue-400">
           <div className="flex justify-between items-center max-w-7xl mx-auto">
             <div className="flex items-center space-x-4">
@@ -562,7 +562,7 @@ const handleSavePreferences = async () => {
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Sidebar Navigation */}
       <div className="w-1/4 bg-gray-800 p-6">
