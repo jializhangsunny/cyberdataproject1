@@ -191,22 +191,23 @@ export const UserPreferencesProvider = ({ children }) => {
   //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
   //   }
   // }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
+  
 
-const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
-  const commonVulns = currentPreferences?.commonVulnerabilitiesLevel;
-  
-  // Add debugging
-  console.log('commonVulns:', commonVulns, 'type:', typeof commonVulns);
-  
-  // Ensure it's an array
-  if (!Array.isArray(commonVulns)) {
-    console.warn('commonVulnerabilitiesLevel is not an array:', commonVulns);
-    return null;
-  }
-  
-  const found = commonVulns.find(cv => cv.vulnerabilityId === vulnerabilityId);
-  return found ? found.level : null;
-}, [currentPreferences]);
+  const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
+    const commonVulns = currentPreferences?.commonVulnerabilitiesLevel;
+    
+    // Add debugging
+    console.log('commonVulns:', commonVulns, 'type:', typeof commonVulns);
+    
+    // Ensure it's an array
+    if (!Array.isArray(commonVulns)) {
+      console.warn('commonVulnerabilitiesLevel is not an array:', commonVulns);
+      return null;
+    }
+    
+    const found = commonVulns.find(cv => cv.vulnerabilityId === vulnerabilityId);
+    return found ? found.level : null;
+  }, [currentPreferences]);
 
   // Clear error
   const clearError = useCallback(() => setError(null), []);

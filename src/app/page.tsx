@@ -209,17 +209,39 @@ function HomeContent() {
     setOrgSector(user?.organization?.sector || "Energy");
   }, [user]);
 
-  // useEffect(() => {
-  //   // Only check after we've loaded all preferences and haven't checked yet
-  //   if (user?.id && !preferencesLoading && hasLoadedAllPreferences && !hasCheckedFirstTime) {
-  //     const isFirstTime = isFirstTimeUser();
+  useEffect(() => {
+    if (selectedThreatActor && !isSaving.current) {
+      // Initialize all motivation weights if not already set
+      const newMotivationWeights = { ...localMotivationWeights };
+      let hasChanges = false;
       
-  //     if (isFirstTime) {
-  //       setShowWelcomeBanner(true);
-  //     }
-  //     setHasCheckedFirstTime(true);
-  //   }
-  // }, [user?.id, preferencesLoading, hasLoadedAllPreferences, isFirstTimeUser, hasCheckedFirstTime]);
+      selectedThreatActor.motivations.forEach(motivation => {
+        if (newMotivationWeights[motivation.id] === undefined) {
+          newMotivationWeights[motivation.id] = motivation.weight || (1.0 / selectedThreatActor.motivations.length);
+          hasChanges = true;
+        }
+      });
+      
+      if (hasChanges) {
+        setLocalMotivationWeights(newMotivationWeights);
+      }
+      
+      // Same for goals
+      const newGoalWeights = { ...localGoalWeights };
+      hasChanges = false;
+      
+      selectedThreatActor.goals.forEach(goal => {
+        if (newGoalWeights[goal.id] === undefined) {
+          newGoalWeights[goal.id] = goal.weight || (1.0 / selectedThreatActor.goals.length);
+          hasChanges = true;
+        }
+      });
+      
+      if (hasChanges) {
+        setLocalGoalWeights(newGoalWeights);
+      }
+    }
+  }, [selectedThreatActor?.id]);
 
   useEffect(() => {
     if (!isSaving.current && preferences && selectedThreatActor) {
@@ -351,10 +373,36 @@ function HomeContent() {
     setLocalW2(newW2);
   };
 
+  // const handleMotivationWeightChange = (motivationId: string, value: number) => {
+  //   if (!selectedThreatActor) return;
+    
+  //   const newWeight = value / 100;
+  //   const otherMotivations = selectedThreatActor.motivations.filter(m => m.id !== motivationId);
+    
+  //   if (otherMotivations.length === 0) {
+  //     setLocalMotivationWeights({ [motivationId]: 1.0 });
+  //     return;
+  //   }
+    
+  //   const remainingWeight = 1.0 - newWeight;
+  //   const weightPerOther = remainingWeight / otherMotivations.length;
+    
+  //   const newWeights = { ...localMotivationWeights };
+  //   newWeights[motivationId] = newWeight;
+    
+  //   otherMotivations.forEach(motivation => {
+  //     newWeights[motivation.id] = weightPerOther;
+  //   });
+    
+  //   setLocalMotivationWeights(newWeights);
+  // };
   const handleMotivationWeightChange = (motivationId: string, value: number) => {
     if (!selectedThreatActor) return;
     
     const newWeight = value / 100;
+    const oldWeight = localMotivationWeights[motivationId] || 0;
+    const weightDifference = newWeight - oldWeight;
+    
     const otherMotivations = selectedThreatActor.motivations.filter(m => m.id !== motivationId);
     
     if (otherMotivations.length === 0) {
@@ -362,15 +410,36 @@ function HomeContent() {
       return;
     }
     
-    const remainingWeight = 1.0 - newWeight;
-    const weightPerOther = remainingWeight / otherMotivations.length;
+    // Calculate total weight of other motivations
+    const totalOtherWeight = otherMotivations.reduce((sum, m) => 
+      sum + (localMotivationWeights[m.id] || 0), 0
+    );
     
     const newWeights = { ...localMotivationWeights };
     newWeights[motivationId] = newWeight;
     
-    otherMotivations.forEach(motivation => {
-      newWeights[motivation.id] = weightPerOther;
-    });
+    // Redistribute the difference proportionally
+    if (totalOtherWeight > 0) {
+      otherMotivations.forEach(motivation => {
+        const currentWeight = localMotivationWeights[motivation.id] || 0;
+        const proportion = currentWeight / totalOtherWeight;
+        newWeights[motivation.id] = Math.max(0, currentWeight - (weightDifference * proportion));
+      });
+    } else {
+      // If all others are 0, distribute equally
+      const weightPerOther = (1 - newWeight) / otherMotivations.length;
+      otherMotivations.forEach(motivation => {
+        newWeights[motivation.id] = weightPerOther;
+      });
+    }
+    
+    // Normalize to ensure sum = 1
+    const sum = Object.values(newWeights).reduce((a, b) => a + b, 0);
+    if (sum > 0) {
+      Object.keys(newWeights).forEach(key => {
+        newWeights[key] = newWeights[key] / sum;
+      });
+    }
     
     setLocalMotivationWeights(newWeights);
   };
@@ -470,25 +539,132 @@ const handleSavePreferences = async () => {
     ? (RESOURCE_LEVELS[selectedThreatActor.resourceLevel] || 0)
     : 0;
 
-  // Calculate motivation scores using local weights and relevance levels
-  const motivationScore = selectedThreatActor 
-    ? selectedThreatActor.motivations.reduce((total, motivation) => {
-        const customRelevanceLevel = localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel;
-        const relevanceValue = RELEVANCE_LEVELS[customRelevanceLevel] || 0;
-        const customWeight = localMotivationWeights[motivation.id] !== undefined ? localMotivationWeights[motivation.id] : motivation.weight;
-        return total + (relevanceValue * customWeight);
-      }, 0)
-    : 0;
 
-  // Calculate goal scores using local weights and relevance levels
-  const goalScore = selectedThreatActor 
-    ? selectedThreatActor.goals.reduce((total, goal) => {
-        const customRelevanceLevel = localGoalRelevanceLevels[goal.id] || goal.relevanceLevel;
-        const relevanceValue = RELEVANCE_LEVELS[customRelevanceLevel] || 0;
-        const customWeight = localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight;
-        return total + (relevanceValue * customWeight);
-      }, 0)
-    : 0;
+  // Debug: Log the actual state values
+console.log("=== DEBUG TEF Calculation ===");
+console.log("localMotivationRelevanceLevels:", localMotivationRelevanceLevels);
+console.log("localGoalRelevanceLevels:", localGoalRelevanceLevels);
+
+if (selectedThreatActor) {
+  console.log("\n--- Motivation Values ---");
+  selectedThreatActor.motivations.forEach(motivation => {
+    const idStr = String(motivation.id);
+    const localRelevance = localMotivationRelevanceLevels[idStr];
+    const defaultRelevance = motivation.relevanceLevel;
+    const usedRelevance = localRelevance || defaultRelevance || "Moderate";
+    
+    console.log(`${motivation.name} (${motivation.id}):`, {
+      localRelevance,
+      defaultRelevance,
+      usedRelevance,
+      relevanceValue: RELEVANCE_LEVELS[usedRelevance]
+    });
+  });
+}
+  // Calculate motivation scores using local weights and relevance levels
+  // Calculate motivation scores - ensure consistent defaults
+const motivationScore = selectedThreatActor 
+  ? selectedThreatActor.motivations.reduce((total, motivation) => {
+      // Handle both cases: with and without preferences
+      let idStr;
+      let relevanceLevel;
+      let weight;
+      
+      if (motivationAnalysis.length > 0) {
+        // When preferences exist, find the matching motivation
+        const prefMotivation = motivationAnalysis.find((m: any) => 
+          m.motivationId.name === motivation.name || 
+          m.motivationId.id === motivation.id
+        );
+        
+        if (prefMotivation) {
+          idStr = String(prefMotivation.motivationId.id);
+          relevanceLevel = localMotivationRelevanceLevels[idStr] || prefMotivation.relevanceLevel || "Moderate";
+          weight = localMotivationWeights[idStr] !== undefined 
+            ? localMotivationWeights[idStr] 
+            : prefMotivation.weight;
+        } else {
+          // Fallback if not found in preferences
+          idStr = String(motivation.id);
+          relevanceLevel = localMotivationRelevanceLevels[idStr] || motivation.relevanceLevel || "Moderate";
+          weight = localMotivationWeights[idStr] !== undefined 
+            ? localMotivationWeights[idStr] 
+            : motivation.weight || (1.0 / selectedThreatActor.motivations.length);
+        }
+      } else {
+        // No preferences - use threat actor data directly
+        idStr = String(motivation.id);
+        relevanceLevel = localMotivationRelevanceLevels[idStr] || motivation.relevanceLevel || "Moderate";
+        weight = localMotivationWeights[idStr] !== undefined 
+          ? localMotivationWeights[idStr] 
+          : motivation.weight || (1.0 / selectedThreatActor.motivations.length);
+      }
+      
+      const relevanceValue = RELEVANCE_LEVELS[relevanceLevel] || 0;
+      
+      console.log(`Calc ${motivation.name}:`, { idStr, relevanceLevel, relevanceValue, weight });
+      
+      return total + (relevanceValue * weight);
+    }, 0)
+  : 0;
+
+// Calculate goal scores - ensure consistent defaults
+const goalScore = selectedThreatActor 
+  ? selectedThreatActor.goals.reduce((total, goal) => {
+      let idStr;
+      let relevanceLevel;
+      let weight;
+      
+      if (contextGoalsAnalysis.length > 0) {
+        const prefGoal = contextGoalsAnalysis.find((g:any) => 
+          g.goalId.name === goal.name || 
+          g.goalId.id === goal.id
+        );
+        
+        if (prefGoal) {
+          idStr = String(prefGoal.goalId.id);
+          relevanceLevel = localGoalRelevanceLevels[idStr] || prefGoal.relevanceLevel || "Moderate";
+          weight = localGoalWeights[idStr] !== undefined 
+            ? localGoalWeights[idStr] 
+            : prefGoal.weight;
+        } else {
+          idStr = String(goal.id);
+          relevanceLevel = localGoalRelevanceLevels[idStr] || goal.relevanceLevel || "Moderate";
+          weight = localGoalWeights[idStr] !== undefined 
+            ? localGoalWeights[idStr] 
+            : goal.weight || (1.0 / selectedThreatActor.goals.length);
+        }
+      } else {
+        idStr = String(goal.id);
+        relevanceLevel = localGoalRelevanceLevels[idStr] || goal.relevanceLevel || "Moderate";
+        weight = localGoalWeights[idStr] !== undefined 
+          ? localGoalWeights[idStr] 
+          : goal.weight || (1.0 / selectedThreatActor.goals.length);
+      }
+      
+      const relevanceValue = RELEVANCE_LEVELS[relevanceLevel] || 0;
+      return total + (relevanceValue * weight);
+    }, 0)
+  : 0;
+
+  // Add this after your calculations
+  // const motivationWeightSum = selectedThreatActor?.motivations.reduce((sum, m) => 
+  //   sum + (localMotivationWeights[m.id] || 0), 0) || 0;
+
+  // const goalWeightSum = selectedThreatActor?.goals.reduce((sum, g) => 
+  //   sum + (localGoalWeights[g.id] || 0), 0) || 0;
+
+  // console.log('Weight sums:', { motivationWeightSum, goalWeightSum });
+
+  // // Calculate goal scores using local weights and relevance levels
+  // const goalScore = selectedThreatActor 
+  //   ? selectedThreatActor.goals.reduce((total, goal) => {
+  //       const customRelevanceLevel = localGoalRelevanceLevels[goal.id] || goal.relevanceLevel;
+  //       const relevanceValue = RELEVANCE_LEVELS[customRelevanceLevel] || 0;
+  //       const customWeight = localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight;
+  //       return total + (relevanceValue * customWeight);
+  //     }, 0)
+  //   : 0;
   
   const locationMatchScore = selectedThreatActor && orgLocation === selectedThreatActor.location ? 1 : 0;
   const sectorMatchScore = selectedThreatActor && orgSector === selectedThreatActor.sector ? 1 : 0;
@@ -1166,7 +1342,7 @@ const handleSavePreferences = async () => {
           <p className="text-white text-lg mb-2">
             TA ({threatAbility.toFixed(3)}) × Motivation ({motivationScore.toFixed(3)}) × Goals ({goalScore.toFixed(3)}) × Location ({locationMatchScore}) × Sector ({sectorMatchScore})
           </p>
-          <p className="text-white text-3xl font-bold">{tefValue.toFixed(6)}</p>
+          <p className="text-white text-3xl font-bold">{tefValue.toFixed(3)}</p>
         </Card>
 
         {/* Save Preferences Button */}
