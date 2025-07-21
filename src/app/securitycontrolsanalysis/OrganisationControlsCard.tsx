@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 
 
 interface OrganizationControlsCardProps {
+  id?: String;
   controls: string[];
   onAddControl: (controlName: string) => Promise<void>;
   onRemoveControl?: (controlName: string) => Promise<void>;

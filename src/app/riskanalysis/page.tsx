@@ -12,8 +12,10 @@ import assetService from '../../services/assets'
 import lossTypeService from '../../services/lossType';
 
 const riskSteps : StepType[] = [
-  { selector: "#tour-risk-filters", content: "Use filters to focus.", position: "top" },
-  { selector: "#tour-risk-summary", content: "Residual risk summary." , position: "top"},
+  { selector: "#tour-risk-filters", content: "Select existing asset of your organisation", position: "top" },
+  { selector: "#primary-risk", content: "Review Primary Loss and edit assets", position: "top" },
+  { selector: "#secondary-risk", content: "Review Secondary Loss", position: "top" },
+  { selector: "#tour-risk-summary", content: "Total Risk summary" , position: "top"},
 ];
 
 export default function RiskAnalysis() {
@@ -339,7 +341,7 @@ export default function RiskAnalysis() {
 
         {/* Asset Selection */}
         {assets.length > 0 && (
-          <Card className="p-6 mb-8 bg-white">
+          <Card className="p-6 mb-8 bg-white" id="tour-risk-filters">
             <h2 className="text-xl font-semibold mb-4 text-black">Select Asset</h2>
             <Select 
               onValueChange={handleAssetSelect}
@@ -361,7 +363,7 @@ export default function RiskAnalysis() {
 
         {/* Primary Loss Magnitude (PLM) Analysis Table */}
         {selectedAsset && (
-          <Card className="p-6 mb-8 bg-white">
+          <Card className="p-6 mb-8 bg-white" id="primary-risk">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-black">Primary Loss Magnitude (PLM) Analysis</h2>
               <div className="space-x-2">
@@ -478,7 +480,7 @@ export default function RiskAnalysis() {
         )}
 
         {/* Secondary Loss Magnitude (SLM) Analysis */}
-        <Card id="tour-risk-filters" className="p-6 mb-8 bg-white">
+        <Card className="p-6 mb-8 bg-white" id="secondary-risk">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-black">Secondary Loss Magnitude (SLM) Analysis</h2>
           </div>

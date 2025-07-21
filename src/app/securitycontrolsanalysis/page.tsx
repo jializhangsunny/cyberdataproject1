@@ -33,9 +33,12 @@ import organizationControlsService from "@/services/organizationControls"
 import OnboardingTour from "@/components/OnboardingTour";
 const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolean) => void }) => {
   const scSteps = [
-    { selector: "#tour-vuln-control", content: "Review current vulnerability-control mapping." },
-    { selector: "#tour-control-matrix",     content: "Review control matrix and ROCSI analysis." },
-    // { selector: "#tour-rocsi-score",      content: "Review ROCSI analysis." },
+    { selector: "#controls", content: "Add and remove controls" },
+    { selector: "#vuln-mapping", content: "Set values for overlapping vulnerabilities and controls to calculate NRR" },
+    { selector: "#interaction-effect", content: "Set how connected the controls are to each other" },
+    { selector: "#costs", content: "Set costs for implementing the controls" },
+    { selector: "#tour-control-matrix",     content: "Review control matrix and Return on Cyber Security Investment (ROCSI) analysis" },
+    { selector: "#budget", content: "Review and edit budget information" }
   ];
 
 
@@ -61,14 +64,9 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         
         if (user?.organization?.id) {
           const data = await organizationsService.getOverlappingVulnerabilities(user?.organization?.id, null);
-          // for vuln in data.overla:
-          //   if vuln.status != patched:
-          //    add to dat
-          console.log('overlapping vulns: ', data.overlappingVulnerabilities)
           setOverlappingVulnerabilities(data.overlappingVulnerabilities);
         }
       } catch (error) {
-        console.error('Error fetching overlapping vulnerabilities:', error);
         setOverlappingVulnerabilities([]);
       } finally {
         setVulnsLoaded(true);
@@ -188,17 +186,19 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         <h1 className="text-3xl font-bold mb-6">Security Controls Analysis & ROSI Calculation</h1>
 
         {/* Organisation Controls */}
-        <OrganizationControlsCard
-          controls={organizationControls?.controls || []}
-          onAddControl={(controlName) => handleAddControl(user?.organization?.id!, controlName)}
-          onRemoveControl={(controlName) => handleRemoveControl(user?.organization?.id!, controlName)}
-          loading={false}
-          organizationName={user?.organization?.name}
-        />
+        <div id="controls">
+          <OrganizationControlsCard
+            controls={organizationControls?.controls || []}
+            onAddControl={(controlName) => handleAddControl(user?.organization?.id!, controlName)}
+            onRemoveControl={(controlName) => handleRemoveControl(user?.organization?.id!, controlName)}
+            loading={false}
+            organizationName={user?.organization?.name}
+          />
+        </div>
 
         {/* Vulnerability-Control Mapping */}
         {vulnsLoaded && controlsLoaded ? (
-          <div id="tour-vuln-control">
+          <div id="vuln-mapping">
             <VulnerabilityControlMappingCard
               overlappingVulnerabilities={overlappingVulnerabilities}
               controls={organizationControls?.controls || []}
@@ -228,33 +228,37 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
         )}
 
         {/* Interaction Effect Analysis */}
-        {controlsLoaded ? (
-          <InteractionEffectsAnalysis
-            controls={organizationControls?.controls || []}
-            organizationId={user?.organization?.id || ""}
-            userId={user?.id || ""}
-            loading={false}
-          />
-        ) : (
-          <Card className="bg-gray-300 text-black p-6">
-            <h2 className="text-xl font-semibold mb-4">Interaction Effect Analysis</h2>
-            <div className="text-center py-4">
-              <p>Loading controls...</p>
-            </div>
-          </Card>
-        )}
+        <div id="interaction-effect">
+          {controlsLoaded ? (
+            <InteractionEffectsAnalysis
+              controls={organizationControls?.controls || []}
+              organizationId={user?.organization?.id || ""}
+              userId={user?.id || ""}
+              loading={false}
+            />
+          ) : (
+            <Card className="bg-gray-300 text-black p-6">
+              <h2 className="text-xl font-semibold mb-4">Interaction Effect Analysis</h2>
+              <div className="text-center py-4">
+                <p>Loading controls...</p>
+              </div>
+            </Card>
+          )}
+        </div>
 
         {/* Control Costs Analysis */}
-        <ControlCostsAnalysis 
-          controls={organizationControls?.controls || []}
-          userId={user?.id || ""}
-          organizationId={user?.organization?.id || ""}
-          loading={false}
-          onDataChange={(newCostData) => {
-            setCostData(newCostData);
-            // setBudgetRefreshTrigger(prev => prev + 1);
-          }}
-        />
+        <div id="costs">
+          <ControlCostsAnalysis 
+            controls={organizationControls?.controls || []}
+            userId={user?.id || ""}
+            organizationId={user?.organization?.id || ""}
+            loading={false}
+            onDataChange={(newCostData) => {
+              setCostData(newCostData);
+              // setBudgetRefreshTrigger(prev => prev + 1);
+            }}
+          />
+        </div>
 
         {/* Control Selection Matrix */}
         <div id="tour-control-matrix">
@@ -269,73 +273,20 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
           />
         </div>
 
-        {/* Budget Info */}
-        {/* <Card className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">Budget Information</h2>
-          {(() => {
-            const totalBudget = 200;
-            const totalCost = costs.reduce((sum, item) =>
-              sum + item.purchaseCost + item.operationalCost + item.trainingCost + item.manpowerCost, 0);
-            const budgetStatus = totalCost <= totalBudget ? "Within Budget" : "Exceeds Budget";
-
-            return (
-              <div className="space-y-2 text-sm">
-                <p><strong>Total Budget:</strong> ${totalBudget}</p>
-                <p><strong>Total Cost:</strong> ${totalCost}</p>
-                <p><strong>Budget Status:</strong> <span className={budgetStatus === "Within Budget" ? "text-green-600" : "text-red-600"}>{budgetStatus}</span></p>
-              </div>
-            );
-          })()}
-        </Card> */}
-        <BudgetInfo 
-          userId={user?.id}
-          organizationId={user?.organization?.id}
-          onBudgetUpdate={() => {
-            // Optional: Refresh other components when budget changes
-            console.log('Budget updated');
-          }}
-          refreshTrigger={budgetRefreshTrigger}
-        />
-
-        {/* ROSI */}
-        {/* <Card className="bg-gray-300 text-black p-6">
-          <h2 className="text-xl font-semibold mb-4">ROCSI Analysis</h2>
-          <p>Return on Control Security Investment (ROCSI) based on selected controls.</p>
-          <table className="w-full text-sm border border-gray-400 mt-4">
-            <thead className="bg-gray-200 text-black">
-              <tr>
-                <th className="p-2 border">Control Set</th>
-                <th className="p-2 border">Total NRR</th>
-                <th className="p-2 border">Total Interaction Effect</th>
-                <th className="p-2 border">Total Cost</th>
-                <th className="p-2 border">ROCSI</th>
-              </tr>
-            </thead>
-            <tbody>
-  {(() => {
-    const patchApacheNRR = totalRisk * 0.9 - 0.2 * 100;
-    const ms17NRR = totalRisk * 0.95 - 0.4 * 60;
-    const totalNRR = patchApacheNRR + ms17NRR;
-    const ms17Cost = 27;
-    const patchApacheCost = 82.8 ;
-    const totalCost = ms17Cost + patchApacheCost;
-   const totalRosci = ((totalNRR * 1.8) - totalCost) / totalCost; */}
+        { /* Budget Info */}
+        <div id="budget">
+          <BudgetInfo 
+            userId={user?.id}
+            organizationId={user?.organization?.id}
+            onBudgetUpdate={() => {
+              // Optional: Refresh other components when budget changes
+              console.log('Budget updated');
+            }}
+            refreshTrigger={budgetRefreshTrigger}
+          />
+        </div>
 
 
-
-    {/* return (
-      <tr>
-        <td className="p-2 border">1) Patch Apache Struts<br />2) MS17-010 Patch</td>
-        <td className="p-2 border">{totalNRR.toFixed(2)}</td>
-        <td className="p-2 border">0.8</td>
-        <td className="p-2 border">{totalCost.toFixed(2)}</td>
-        <td className="p-2 border">{totalRosci.toFixed(2)}</td>
-      </tr>
-    );
-  })()}
-</tbody>
-          </table>
-        </Card> */}
 
         <button onClick={() => setShowModal(true)}
                 className="fixed bottom-6 right-6 z-40

@@ -123,17 +123,17 @@ const tasteps : StepType[]= [
   },
   {
     selector: "#tour-threat-ability",
-    content: " Adjust the weights and inspect the Threat-Ability gauge.",
+    content: "Adjust the weights and inspect the Threat-Ability gauge.",
     position: "top",
   },
   {
     selector: "#tour-location-sector",
-    content: " Choose your organisation’s location & sector to see the match.",
+    content: "Choose your organisation’s location & sector.",
     position: "top",
   },
   {
     selector: "#tour-tef-value",
-    content: "Here you’ll find the composite TEF risk score.",
+    content: "Here you’ll find the Threat Event Frequency (TEF) risk score.",
     position: "top",
   },
 ];

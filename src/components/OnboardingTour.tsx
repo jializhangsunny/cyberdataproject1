@@ -31,10 +31,43 @@ export default function OnboardingTour({
   return (
     <TourProvider
       steps={steps}
-      onClickClose={() => localStorage.setItem(storageKey, "yes")}
-
+      onClickClose={({ setIsOpen }) => {
+        localStorage.setItem(storageKey, "yes");
+        setIsOpen(false); // Actually close the tour
+      }}
+      components={{
+        Close: () => {
+          const { setIsOpen } = useTour(); // Get setIsOpen from the tour context
+          
+          return (
+            <button
+              onClick={() => {
+                localStorage.setItem(storageKey, "yes");
+                setIsOpen(false);
+              }}
+              style={{
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                color: 'white',
+                fontSize: 16,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ✕
+            </button>
+          );
+        },
+      }}
       styles={{
-        /* ubble */
         popover: (base: any): CSSProperties => ({
           ...base,
           background: "#2563eb",
@@ -45,27 +78,49 @@ export default function OnboardingTour({
           maxWidth: 400,
         }),
         arrow: (base: CSSProperties): CSSProperties => ({
-          ...base, color: "#2563eb",
+          ...base, 
+          color: "#2563eb",
         }),
         badge: (base: CSSProperties): CSSProperties => ({
-          ...base, background: "#3b82f6", fontSize: 20,}),
+          ...base, 
+          background: "#3b82f6", 
+          fontSize: 20,
+        }),
         button: (base: CSSProperties): CSSProperties => ({
           ...base,
           background: "#3b82f6",
           fontSize: 20,
           padding: "8px 20px",
-              }),
-
-          close: (base: any) => ({
-  ...base,
-color: "#ffffff",
-stroke: "#ffffff",
-strokeWidth: 1.5,
-  width: 20,
-  height: 20,
-  right: 20,
-cursor: "pointer",
         }),
+        // close: (base: any) => ({
+        //   ...base,
+        //   position: "absolute",
+        //   top: 10,
+        //   right: 10,
+        //   width: 24,        // Make it square
+        //   height: 24,       // Make it square
+        //   display: "flex",
+        //   alignItems: "center",
+        //   justifyContent: "center",
+        //   background: "rgba(255, 255, 255, 1)",
+        //   borderRadius: "50%",
+        //   cursor: "pointer",
+        //   color: "#000000",
+        //   fontSize: 18,
+        //   lineHeight: "24px",
+        //   textAlign: "center",
+        //   fontFamily: "Arial, sans-serif",
+        //   "&:hover": {
+        //     background: "rgba(255, 255, 255, 0.3)",
+        //   },
+        //   // Style the SVG inside if it exists
+        //   "& svg": {
+        //     width: 14,
+        //     height: 14,
+        //     stroke: "#000000",
+        //     strokeWidth: 2,
+        //   }
+        // }),
         maskWrapper: (base: any) => ({
           ...base,
           background: maskBg,
@@ -74,6 +129,7 @@ cursor: "pointer",
       showDots
       showBadge
       disableInteraction
+      showCloseButton={true} // Make sure this is explicitly set
     >
       <AutoStart storageKey={storageKey} />
     </TourProvider>
