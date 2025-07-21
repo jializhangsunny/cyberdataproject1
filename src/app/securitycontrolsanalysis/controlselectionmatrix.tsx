@@ -303,7 +303,7 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
                   <td key={control} className={`p-2 border text-center font-bold ${
                     rosi >= 0 ? 'text-green-700' : 'text-red-700'
                   }`}>
-                    {rosi.toFixed(2)}
+                    {rosi.toFixed(4)}
                   </td>
                 );
               })}
@@ -337,7 +337,7 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
           <div className="mt-2 pt-2 border-t">
             <span className="font-medium">ROCSI: </span>
             <span className={`font-bold text-lg ${combinedROSI >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-              {combinedROSI.toFixed(2)} ($M)
+              {combinedROSI.toFixed(4)} ($M)
             </span>
           </div>
         </Card>

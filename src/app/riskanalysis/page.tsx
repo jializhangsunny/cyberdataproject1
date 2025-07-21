@@ -627,7 +627,7 @@ export default function RiskAnalysis() {
             </p>
             <p className="text-white font-bold text-2xl mt-4">
               Total Risk = Total LEF × Total PLM + Total SLM ={" "}
-              ${totalRisk.toFixed(2)} million
+              ${totalRisk.toFixed(4)} million
             </p>
           </div>
         </Card>
