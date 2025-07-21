@@ -796,7 +796,6 @@ const handleSavePreferences = async () => {
             
             <div className="mb-2">
               <label className="block text-sm text-gray-300 mb-1">
-                Sophistication vs Resource Weight (w1 = {localW1.toFixed(2)}, w2 = {localW2.toFixed(2)})
               </label>
               <input
                 type="range"
@@ -807,11 +806,6 @@ const handleSavePreferences = async () => {
                 onChange={(e) => handleW1Change(Number(e.target.value))}
                 className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
-                <span>All Resource (w2=1.0)</span>
-                <span>Balanced</span>
-                <span>All Sophistication (w1=1.0)</span>
-              </div>
             </div>
           </div>
         </Card>
@@ -820,7 +814,7 @@ const handleSavePreferences = async () => {
         <Card className="p-4 mb-8 text-center bg-red-700">
           <h2 className="text-xl font-semibold">Threat Ability (TA)</h2>
           <p className="text-white text-lg mb-2">
-            {sophisticationValue.toFixed(2)} × {localW1.toFixed(2)} + {resourceValue.toFixed(2)} × {localW2.toFixed(2)}
+            {sophisticationValue.toFixed(3)} × {localW1.toFixed(2)} + {resourceValue.toFixed(3)} × {localW2.toFixed(2)}
           </p>
           <p className="text-white text-2xl font-bold mt-2">{threatAbility.toFixed(2)}</p>
         </Card>

@@ -22,6 +22,7 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
   const [selectionData, setSelectionData] = useState<ControlSelectionData[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [combinedSynergyEffect, setCombinedSynergyEffect] = useState(0);
 
   useEffect(() => {
     loadSelectionData();
@@ -158,13 +159,37 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
   }
 };
 
+
   // Calculate summary for selected controls
   const selectedControls = selectionData.filter(item => item.includeInSet);
   const totalSelectedCost = selectedControls.reduce((sum, item) => sum + item.totalCost, 0);
   const totalSelectedNRR = selectedControls.reduce((sum, item) => sum + item.individualNRR, 0);
   const totalSynergyEffect = selectedControls.reduce((sum, item) => sum + item.individualInteractionEffect, 0);
   const combinedROSI = totalSelectedCost > 0 ? 
-    ((totalSelectedNRR * (1 + totalSynergyEffect)) - totalSelectedCost) / totalSelectedCost : 0;
+  ((totalSelectedNRR * (1 + combinedSynergyEffect)) - totalSelectedCost) / totalSelectedCost : 0;
+
+  useEffect(() => {
+    const calculateCombinedSynergy = async () => {
+      const selectedControlNames = selectedControls.map(item => item.controlName);
+      
+      if (selectedControlNames.length < 2) {
+        setCombinedSynergyEffect(0);
+        return;
+      }
+      
+      try {
+        const synergy = await controlInteractionEffectsService.calculateSynergyEffect(
+          organizationId,
+          selectedControlNames
+        );
+        setCombinedSynergyEffect(synergy);
+      } catch (error) {
+        console.error('Error calculating synergy effect:', error);
+        setCombinedSynergyEffect(0);
+      }
+    };
+  calculateCombinedSynergy();
+  }, [selectedControls, organizationId]);
 
   if (loading || dataLoading) {
     return (
@@ -278,7 +303,7 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
                   <td key={control} className={`p-2 border text-center font-bold ${
                     rosi >= 0 ? 'text-green-700' : 'text-red-700'
                   }`}>
-                    {rosi.toFixed(3)}
+                    {rosi.toFixed(2)}
                   </td>
                 );
               })}
@@ -305,14 +330,14 @@ const ControlSelectionMatrixComponent: React.FC<ControlSelectionMatrixProps> = (
               <div className="text-green-700">${totalSelectedNRR.toFixed(2)}M</div>
             </div>
             <div>
-              <span className="font-medium">Total Interaction Effect:</span>
-              <div className="text-purple-700">{totalSynergyEffect.toFixed(2)}</div>
+              <span className="font-medium">Interaction Effect:</span>
+              <div className="text-purple-700">{combinedSynergyEffect.toFixed(2)}</div>
             </div>
           </div>
           <div className="mt-2 pt-2 border-t">
-            <span className="font-medium">Total ROSI: </span>
+            <span className="font-medium">ROCSI: </span>
             <span className={`font-bold text-lg ${combinedROSI >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-              {combinedROSI.toFixed(3)} ($M)
+              {combinedROSI.toFixed(2)} ($M)
             </span>
           </div>
         </Card>
