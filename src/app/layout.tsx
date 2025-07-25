@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/authContext';
 import { UserPreferencesProvider } from '@/context/userPreferencesContext';
 import { AppProvider } from '@/context/appcontext';
 import FloatingHelp from '@/components/FloatingHelp';
+import ViewerOverlay from '@/components/ViewerOverlay';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,7 +26,10 @@ export default function RootLayout({
         <AuthProvider>
           <UserPreferencesProvider>
             <AppProvider>
-              {children}
+              <div className='relative'>
+                {children}
+                <ViewerOverlay />
+              </div>
               <FloatingHelp />
             </AppProvider>
           </UserPreferencesProvider>

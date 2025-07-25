@@ -741,7 +741,7 @@ const goalScore = selectedThreatActor
       )} */}
 
       {/* Sidebar Navigation */}
-      <div className="w-1/4 bg-gray-800 p-6">
+      <div className="w-1/4 bg-gray-800 p-6 z-60">
         {/* User Info Section */}
 
         <h2 className="text-2xl font-bold mb-4">Navigation</h2>
@@ -839,14 +839,14 @@ const goalScore = selectedThreatActor
       {/* Main Content */}
       <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
         {threatActors.length > 0 && (
-          <Card id="tour-select-threat-actor"
+          <Card id="tour-select-threat-actor z-60"
                 className="p-4 bg-gray-800">
             <h2 className="text-xl font-semibold mb-2 text-white">Select Threat Actor</h2>
             <Select onValueChange={handleThreatActorChange} value={selectedThreatActorId || ""}>
-              <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
+              <SelectTrigger className="z-[60] w-full p-2 border rounded-md bg-white text-black">
                 <SelectValue placeholder="Select Threat Actor" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[70]">
                 {threatActors.map((actor) => (
                   <SelectItem key={actor.id} value={actor.id}>
                     {actor.name}

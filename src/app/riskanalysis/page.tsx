@@ -274,7 +274,7 @@ export default function RiskAnalysis() {
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar Navigation */}
-      <div className="w-1/4 bg-gray-800 p-6">
+      <div className="w-1/4 bg-gray-800 p-6 z-60">
         <h2 className="text-2xl font-bold mb-4">Navigation</h2>
         <nav className="flex flex-col space-y-4">
           <Link
@@ -343,14 +343,14 @@ export default function RiskAnalysis() {
         {assets.length > 0 && (
           <Card className="p-6 mb-8 bg-white" id="tour-risk-filters">
             <h2 className="text-xl font-semibold mb-4 text-black">Select Asset</h2>
-            <Select 
+            <Select
               onValueChange={handleAssetSelect}
               value={selectedAsset?.id || selectedAsset?._id}
             >
-              <SelectTrigger className="w-full bg-white text-black">
+              <SelectTrigger className="w-full bg-white text-black z-[60]">
                 <SelectValue placeholder="Select an asset" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[70]">
                 {assets.map((asset) => (
                   <SelectItem key={asset.id || asset._id} value={asset.id || asset._id}>
                     {asset.name} (${asset.value} million)

@@ -145,7 +145,7 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Sidebar Navigation */}
-      <div className="w-1/4 bg-gray-800 p-6">
+      <div className="w-1/4 bg-gray-800 p-6 z-60">
         <h2 className="text-2xl font-bold mb-4">Navigation</h2>
         <nav className="flex flex-col space-y-4">
           <Link href="/" className="p-3 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600">Threat Actor Analysis</Link>
