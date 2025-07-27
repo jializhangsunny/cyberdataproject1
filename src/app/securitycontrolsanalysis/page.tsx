@@ -63,9 +63,15 @@ const SecurityControlsAnalysis = ({ setShowModal }: { setShowModal: (val: boolea
       try {
         
         if (user?.organization?.id) {
-          const data = await organizationsService.getOverlappingVulnerabilities(user?.organization?.id, null);
-          setOverlappingVulnerabilities(data.overlappingVulnerabilities);
-        }
+        const data = await organizationsService.getOverlappingVulnerabilities(user?.organization?.id, null);
+        
+        // Filter out patched vulnerabilities and set the filtered data
+        const unpatchedVulnerabilities = data.overlappingVulnerabilities.filter(
+          (vulnerability: any) => vulnerability.organizationVulnerability.status !== "Patched"
+        );
+        
+        setOverlappingVulnerabilities(unpatchedVulnerabilities);
+      }
       } catch (error) {
         setOverlappingVulnerabilities([]);
       } finally {
