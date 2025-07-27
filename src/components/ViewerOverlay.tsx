@@ -23,12 +23,33 @@ export default function ViewerOverlay() {
         <span className="font-semibold">View-Only Mode</span>
       </div>
       
-      {/* Invisible overlay that blocks interactions */}
+      {/* Debug: Add some logging */}
       <div 
         className="absolute inset-0" 
         style={{ pointerEvents: 'auto' }}
-        onClick={(e) => e.preventDefault()}
-        onMouseDown={(e) => e.preventDefault()}
+        onClick={(e) => {
+        //   console.log('Click blocked');
+          e.preventDefault();
+        }}
+        onMouseDown={(e) => {
+        //   console.log('MouseDown blocked');
+          e.preventDefault();
+        }}
+        onContextMenu={(e) => {
+        //   console.log('Context menu blocked');
+          e.preventDefault();
+        }}
+        onWheel={(e) => {
+        //   console.log('Wheel event:', e);
+          // Don't prevent this - let it scroll
+        }}
+        onKeyDown={(e) => {
+          console.log('Key pressed:', e.key);
+          if (!['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', 'Space'].includes(e.key)) {
+            // console.log('Key blocked:', e.key);
+            e.preventDefault();
+          }
+        }}
       />
     </div>
   );
