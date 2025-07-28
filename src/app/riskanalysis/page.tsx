@@ -10,6 +10,8 @@ import OnboardingTour from "@/components/OnboardingTour";
 import type { StepType } from "@reactour/tour";
 import assetService from '../../services/assets'
 import lossTypeService from '../../services/lossType';
+import organizationService from '@/services/organizations'
+import { OverlappingVulnerability } from "@/types/vulnerabilities";
 
 const riskSteps : StepType[] = [
   { selector: "#tour-risk-filters", content: "Select existing asset of your organisation", position: "top" },
@@ -37,6 +39,7 @@ export default function RiskAnalysis() {
   const [newLossTypeName, setNewLossTypeName] = useState<string>("");
   const [newLossTypeValue, setNewLossTypeValue] = useState<number>(0);
   const [showAddNew, setShowAddNew] = useState<boolean>(false);
+  const [overlappingVulnerabilities, setOverlappingVulnerabilities] = useState<OverlappingVulnerability>();
 
   const { totalLef, setTotalRisk } = useAppContext();
   const { user, logout } = useAuth();
@@ -101,6 +104,27 @@ export default function RiskAnalysis() {
 
     loadLossTypes();
   }, [user]);
+
+  useEffect(() => {
+    const loadOverlappingVulnerabilities = async () => {
+      console.log(user, 'USER HE')
+      try {
+        if (user?.organization?.id) {
+          const response = await organizationService.getOverlappingVulnerabilities(user.organization.id);
+          setOverlappingVulnerabilities(response.overlappingVulnerabilities)
+          
+        }
+      } catch (err) {
+        console.error('Failed to fetch overlapping vulns:', err);
+      }
+    }
+    loadOverlappingVulnerabilities();
+  }, [user]);
+
+  // Add a separate useEffect to log when overlappingVulnerabilities changes
+useEffect(() => {
+  console.log(overlappingVulnerabilities, 'OVERLAPPING VULNS UPDATED');
+}, [overlappingVulnerabilities]);
 
   const handleAssetSelect = (assetId: string) => {
     const asset = assets.find(a => (a.id || a._id) === assetId);
@@ -239,6 +263,7 @@ export default function RiskAnalysis() {
 
   // Calculate CVSS average score and PLM for selected asset
   const selectedAssetVulnerabilities = selectedAsset?.vulnerabilities || [];
+  console.log(selectedAssetVulnerabilities, "SELECTED ASSET VULNS COMMING THROUGH")
   const criticality = selectedAssetVulnerabilities.length > 0
     ? selectedAssetVulnerabilities.reduce((sum: number, vuln: any) => sum + vuln.cvss, 0) / selectedAssetVulnerabilities.length
     : 0;

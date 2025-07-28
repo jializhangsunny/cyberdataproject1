@@ -19,14 +19,17 @@ export default function ViewerOverlay() {
         cursor: 'not-allowed' 
       }}
     >
-      <div className="absolute top-4 right-4 bg-yellow-500 text-black px-4 py-2 rounded-md shadow-lg pointer-events-auto z-100">
+      <div className="absolute top-4 right-4 bg-yellow-500 text-black px-4 py-2 rounded-md shadow-lg pointer-events-auto z-10000">
         <span className="font-semibold">View-Only Mode</span>
       </div>
       
       {/* Debug: Add some logging */}
       <div 
         className="absolute inset-0" 
-        style={{ pointerEvents: 'auto' }}
+        style={{ 
+            pointerEvents: 'auto',
+            right: '17px'
+         }}
         onClick={(e) => {
         //   console.log('Click blocked');
           e.preventDefault();
