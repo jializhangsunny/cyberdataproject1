@@ -7,7 +7,7 @@ import { useAuth } from '@/context/authContext';
 export default function ViewerOverlay() {
   const { user } = useAuth();
   
-  if (user?.type === 'viewer') {
+  if (user?.type !== 'viewer') {
     return null;
   }
   
