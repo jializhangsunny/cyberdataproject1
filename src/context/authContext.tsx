@@ -74,6 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
  const logout = (): void => {
    userService.logout();
    setUser(null);
+   window.location.href = '/';
  };
 
  const isAuthenticated = (): boolean => {

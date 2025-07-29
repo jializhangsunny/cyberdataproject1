@@ -340,7 +340,7 @@ export default function RiskAnalysis() {
           </Link>
 
 
-                    <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+        <div className="mb-6 p-4 bg-gray-700 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
@@ -365,9 +365,8 @@ export default function RiskAnalysis() {
             </button>
           </div>
         </div>
-
-        </nav>
-      </div>
+      </nav>
+    </div>
 
       {/* Main Content */}
       <div className="w-3/4 p-6 overflow-y-auto">

@@ -10,7 +10,6 @@ import { useAuth } from "@/context/authContext";
 import { useUserPreferences } from "@/context/userPreferencesContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Check, X } from 'lucide-react';
-import { HelpCircle } from 'lucide-react';
 import OnboardingTour from "@/components/OnboardingTour";
 import type { StepType } from "@reactour/tour";
 
@@ -180,7 +179,7 @@ function HomeContent() {
   const isSaving = useRef(false);
 
   const { setTefValue, selectedThreatActorId, setSelectedThreatActorId } = useAppContext();
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout } = useAuth();
 
   // Load preferences when threat actor changes
   useEffect(() => {
@@ -768,43 +767,43 @@ const goalScore = selectedThreatActor
           </Link>
 
           <div className="mb-6 p-4 bg-gray-700 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
-              <p className="text-sm text-gray-300">{user?.email}</p>
-              <span className={`inline-block px-2 py-1 text-xs rounded mt-1 ${
-                user?.type === 'admin' ? 'bg-red-600 text-white' :
-                user?.type === 'analyst' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
-              }`}>
-                {user?.type?.toUpperCase()}
-              </span>
-            </div>
-            <button
-              onClick={() => {
-                if (window.confirm('Are you sure you want to logout?')) {
-                  logout();
-                }
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
-              title="Logout"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-
-
-          {/* Admin-only User Management Link */}
-          {/* {hasRole(['admin']) && (
-            <Link
-              href="/users"
-              className="p-3 bg-purple-700 text-white rounded-md hover:bg-purple-600 transition-colors border-l-4 border-purple-400">
-              <div className="flex items-center justify-between">
-                <span>User Management</span>
-                <span className="text-xs bg-purple-500 px-2 py-1 rounded">ADMIN</span>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
+                <p className="text-sm text-gray-300">{user?.email}</p>
+                <span className={`inline-block px-2 py-1 text-xs rounded mt-1 ${
+                  user?.type === 'admin' ? 'bg-red-600 text-white' :
+                  user?.type === 'analyst' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
+                }`}>
+                  {user?.type?.toUpperCase()}
+                </span>
               </div>
-            </Link>
-          )} */}
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to logout?')) {
+                    logout();
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                title="Logout"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+
+
+            {/* Admin-only User Management Link */}
+            {/* {hasRole(['admin']) && (
+              <Link
+                href="/users"
+                className="p-3 bg-purple-700 text-white rounded-md hover:bg-purple-600 transition-colors border-l-4 border-purple-400">
+                <div className="flex items-center justify-between">
+                  <span>User Management</span>
+                  <span className="text-xs bg-purple-500 px-2 py-1 rounded">ADMIN</span>
+                </div>
+              </Link>
+            )} */}
         </nav>
 
         {/* User Role Info */}
