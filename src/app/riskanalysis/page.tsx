@@ -86,8 +86,6 @@ export default function RiskAnalysis() {
             vulnerabilities: filterActiveUniqueVulnerabilities(asset.vulnerabilities || [])
           }));
           
-          console.log('Loaded assets with filtered vulnerabilities:', assetsData);
-          
           setAssets(assetsData);
           
           // Calculate total PLM for all assets (now using filtered data)
@@ -131,7 +129,6 @@ export default function RiskAnalysis() {
 
   useEffect(() => {
     const loadOverlappingVulnerabilities = async () => {
-      console.log(user, 'USER HE')
       try {
         if (user?.organization?.id) {
           const response = await organizationService.getOverlappingVulnerabilities(user.organization.id);
@@ -144,11 +141,6 @@ export default function RiskAnalysis() {
     }
     loadOverlappingVulnerabilities();
   }, [user]);
-
-  // Add a separate useEffect to log when overlappingVulnerabilities changes
-useEffect(() => {
-  console.log(overlappingVulnerabilities, 'OVERLAPPING VULNS UPDATED');
-}, [overlappingVulnerabilities]);
 
   const handleAssetSelect = (assetId: string) => {
     const asset = assets.find(a => (a.id || a._id) === assetId);
@@ -287,7 +279,6 @@ useEffect(() => {
 
   // Calculate CVSS average score and PLM for selected asset
   const selectedAssetVulnerabilities = selectedAsset?.vulnerabilities || []; // Already filtered
-  // console.log(selectedAssetVulnerabilities, "CLEAN VULNERABILITIES (already filtered)");
 
   const criticality = selectedAssetVulnerabilities.length > 0
     ? selectedAssetVulnerabilities.reduce((sum: number, vuln: any) => sum + (vuln.cvss || 0), 0) / selectedAssetVulnerabilities.length
