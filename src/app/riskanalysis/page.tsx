@@ -47,14 +47,29 @@ export default function RiskAnalysis() {
   // Function to compute totalPLM for all assets in the organization
   const computeTotalPLM = (allAssets: any[]) => {
     return allAssets.reduce((sum: number, asset: any) => {
-      const vulnerabilities = asset.vulnerabilities || [];
-      const avgCVSS =
-        vulnerabilities.length > 0
-          ? vulnerabilities.reduce((acc: number, v: any) => acc + v.cvss, 0) / vulnerabilities.length
-          : 0;
+      const vulnerabilities = asset.vulnerabilities || []; // Already filtered
+      const avgCVSS = vulnerabilities.length > 0
+        ? vulnerabilities.reduce((acc: number, v: any) => acc + (v.cvss || 0), 0) / vulnerabilities.length
+        : 0;
       const plm = asset.value * (avgCVSS / 10);
       return sum + plm;
     }, 0);
+  };
+
+  const filterActiveUniqueVulnerabilities = (vulnerabilities: any[]) => {
+  if (!vulnerabilities || vulnerabilities.length === 0) return [];
+  
+  return vulnerabilities
+    .filter((vuln: any) => {
+      // Filter out patched vulnerabilities
+      const isPatched = vuln.organizationVulnerability?.status === "Patched" || 
+                        vuln.status === "Patched";
+      return !isPatched;
+    })
+    .filter((vuln: any, index: number, array: any[]) => {
+      // Remove duplicates by vulnerabilityId
+      return array.findIndex((v: any) => v.vulnerabilityId === vuln.vulnerabilityId) === index;
+    });
   };
 
   // Load assets from backend
@@ -63,10 +78,19 @@ export default function RiskAnalysis() {
       try {
         if (user?.organization?.id && user?.id) {
           const response = await assetService.getForUser(user.organization.id, user.id);
-          const assetsData = response.assets || [];
+          const rawAssetsData = response.assets || [];
+          
+          // Filter vulnerabilities for each asset once at the source
+          const assetsData = rawAssetsData.map((asset: any) => ({
+            ...asset,
+            vulnerabilities: filterActiveUniqueVulnerabilities(asset.vulnerabilities || [])
+          }));
+          
+          console.log('Loaded assets with filtered vulnerabilities:', assetsData);
+          
           setAssets(assetsData);
           
-          // Calculate total PLM for all assets
+          // Calculate total PLM for all assets (now using filtered data)
           const total = computeTotalPLM(assetsData);
           setTotalPLM(total);
           
@@ -262,10 +286,11 @@ useEffect(() => {
   const totalSLM = lossTypes.reduce((sum, lossType) => sum + (lossType.value || 0), 0);
 
   // Calculate CVSS average score and PLM for selected asset
-  const selectedAssetVulnerabilities = selectedAsset?.vulnerabilities || [];
-  console.log(selectedAssetVulnerabilities, "SELECTED ASSET VULNS COMMING THROUGH")
+  const selectedAssetVulnerabilities = selectedAsset?.vulnerabilities || []; // Already filtered
+  // console.log(selectedAssetVulnerabilities, "CLEAN VULNERABILITIES (already filtered)");
+
   const criticality = selectedAssetVulnerabilities.length > 0
-    ? selectedAssetVulnerabilities.reduce((sum: number, vuln: any) => sum + vuln.cvss, 0) / selectedAssetVulnerabilities.length
+    ? selectedAssetVulnerabilities.reduce((sum: number, vuln: any) => sum + (vuln.cvss || 0), 0) / selectedAssetVulnerabilities.length
     : 0;
 
   // Calculate PLM for selected asset - use edited value if in edit mode
