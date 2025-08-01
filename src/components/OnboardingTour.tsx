@@ -15,7 +15,10 @@ function AutoStart({ storageKey }: { storageKey: string }) {
 
   useEffect(() => {
     if (!localStorage.getItem(storageKey)) {
-      setIsOpen(true);
+      // Add a small delay to ensure all components are rendered
+      setTimeout(() => {
+        setIsOpen(true);
+      }, 500); // Adjust delay as needed
     }
   }, [storageKey, setIsOpen]);
 
