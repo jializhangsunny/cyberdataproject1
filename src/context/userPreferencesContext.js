@@ -36,7 +36,6 @@ export const UserPreferencesProvider = ({ children }) => {
         setCurrentPreferences(data);
       } else {
         // No preferences found, use defaults
-        console.log('No preferences found for this threat actor, using defaults');
         setCurrentPreferences({
           userId,
           threatActorId,
@@ -56,7 +55,6 @@ export const UserPreferencesProvider = ({ children }) => {
           setHasAnyPreferences(allData.length > 0);
           setHasLoadedAllPreferences(true);
         } catch (err) {
-          console.log('Could not load all preferences, but current one loaded successfully');
           setHasAnyPreferences(!!data);
           setHasLoadedAllPreferences(true);
         }

@@ -29,8 +29,8 @@ function WeightInput({ w1, w2, setW1, setW2 }: WeightInputProps) {
   return (
     <div className="mb-4">
       <div className="flex justify-center">
-       <p className="text-xl font-semibold mt-2"> Weights (w1 + w2 = {w1 + w2} )</p>
-         </div>
+        <p className="text-xl font-semibold mt-2"> Weights (w1 + w2 = {w1 + w2} )</p>
+      </div>
       <label className="block mb-2">
         Sophistication Weight (w1)
         <input

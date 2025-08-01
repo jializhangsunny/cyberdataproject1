@@ -92,35 +92,6 @@ export default function OnboardingTour({
           fontSize: 20,
           padding: "8px 20px",
         }),
-        // close: (base: any) => ({
-        //   ...base,
-        //   position: "absolute",
-        //   top: 10,
-        //   right: 10,
-        //   width: 24,        // Make it square
-        //   height: 24,       // Make it square
-        //   display: "flex",
-        //   alignItems: "center",
-        //   justifyContent: "center",
-        //   background: "rgba(255, 255, 255, 1)",
-        //   borderRadius: "50%",
-        //   cursor: "pointer",
-        //   color: "#000000",
-        //   fontSize: 18,
-        //   lineHeight: "24px",
-        //   textAlign: "center",
-        //   fontFamily: "Arial, sans-serif",
-        //   "&:hover": {
-        //     background: "rgba(255, 255, 255, 0.3)",
-        //   },
-        //   // Style the SVG inside if it exists
-        //   "& svg": {
-        //     width: 14,
-        //     height: 14,
-        //     stroke: "#000000",
-        //     strokeWidth: 2,
-        //   }
-        // }),
         maskWrapper: (base: any) => ({
           ...base,
           background: maskBg,

@@ -188,9 +188,6 @@ function HomeContent() {
   // Initialize local state when threat actor changes (reset to defaults)
   useEffect(() => {
     if (selectedThreatActor && !isSaving.current) {
-      console.log('Threat actor changed, initializing local state...');
-      
-      // Reset to defaults
       setLocalW1(0.5);
       setLocalW2(0.5);
       setLocalMotivationWeights({});
@@ -209,8 +206,6 @@ function HomeContent() {
       const preferenceThreatActorId = preferences.threatActorId?.id || preferences.threatActorId;
       
       if (preferenceThreatActorId === selectedThreatActor.id) {
-        console.log('Loading saved preferences into local state...');
-        
         // Load sophistication/resource weights
         setLocalW1(sophisticationWeight);
         setLocalW2(resourceWeight);
@@ -415,15 +410,6 @@ function HomeContent() {
         relevanceLevel: localGoalRelevanceLevels[goal.id] || goal.relevanceLevel || 'Moderate',
         weight: normalizedGoalWeights[goal.id] || (1.0 / selectedThreatActor.goals.length)
       }));
-
-      console.log('Saving preferences:', {
-        sophisticationResourceWeights: {
-          sophisticationWeight: localW1,
-          resourceWeight: localW2
-        },
-        motivationAnalysis: motivationAnalysisData,
-        goalsAnalysis: goalsAnalysisData
-      });
 
       // Update preferences
       await updatePreferences({
