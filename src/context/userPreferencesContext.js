@@ -21,68 +21,53 @@ export const UserPreferencesProvider = ({ children }) => {
   const [currentThreatActorId, setCurrentThreatActorId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const [hasLoadedAllPreferences, setHasLoadedAllPreferences] = useState(false);
   const [hasAnyPreferences, setHasAnyPreferences] = useState(false);
 
   const loadPreferencesForThreatActor = useCallback(async (userId, threatActorId) => {
-  if (!userId || !threatActorId) return;
-  
-  setLoading(true);
-  setError(null);
-  try {
-    const data = await userPreferencesService.getUserPreferences(userId, threatActorId);
-    setCurrentPreferences(data);
-    setCurrentThreatActorId(threatActorId);
+    if (!userId || !threatActorId) return;
     
-    // If we haven't loaded all preferences yet, do a quick check
-    if (!hasLoadedAllPreferences) {
-      try {
-        const allData = await userPreferencesService.getAllUserPreferences(userId);
-        setAllPreferences(allData);
-        setHasAnyPreferences(allData.length > 0);
-        setHasLoadedAllPreferences(true);
-      } catch (err) {
-        console.log('Could not load all preferences, but current one loaded successfully');
-        setHasAnyPreferences(true); // If we loaded current one, user has at least one
-        setHasLoadedAllPreferences(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await userPreferencesService.getUserPreferences(userId, threatActorId);
+      
+      if (data) {
+        setCurrentPreferences(data);
+      } else {
+        // No preferences found, use defaults
+        console.log('No preferences found for this threat actor, using defaults');
+        setCurrentPreferences({
+          userId,
+          threatActorId,
+          sophisticationResourceWeights: { sophisticationWeight: 0.5, resourceWeight: 0.5 },
+          motivationAnalysis: [],
+          goalsAnalysis: [],
+          commonVulnerabilitiesLevel: []
+        });
       }
-    }
-  } catch (err) {
-    // Handle 404 by creating default preferences
-    if (err.response?.status === 404) {
-      console.log('No preferences found for this threat actor, using defaults');
-      setCurrentPreferences({
-        userId,
-        threatActorId,
-        sophisticationResourceWeights: { sophisticationWeight: 0.5, resourceWeight: 0.5 },
-        motivationAnalysis: [],
-        goalsAnalysis: [],
-        vulnerabilities: [],
-        commonVulnerabilitiesLevel: [],
-        lossTypes: []
-      });
       setCurrentThreatActorId(threatActorId);
       
-      // Load all preferences to check if user is truly first time
+      // Load all preferences if not already loaded
       if (!hasLoadedAllPreferences) {
         try {
           const allData = await userPreferencesService.getAllUserPreferences(userId);
           setAllPreferences(allData);
           setHasAnyPreferences(allData.length > 0);
-        } catch (allErr) {
-          setHasAnyPreferences(false);
+          setHasLoadedAllPreferences(true);
+        } catch (err) {
+          console.log('Could not load all preferences, but current one loaded successfully');
+          setHasAnyPreferences(!!data);
+          setHasLoadedAllPreferences(true);
         }
-        setHasLoadedAllPreferences(true);
       }
-    } else {
+    } catch (err) {
       setError(err.message || 'Failed to load preferences');
       console.error('Error loading user preferences:', err);
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-}, [hasLoadedAllPreferences]);
+  }, [hasLoadedAllPreferences]);
 
   // Load all preferences for user
   const loadAllUserPreferences = useCallback(async (userId) => {
@@ -101,107 +86,149 @@ export const UserPreferencesProvider = ({ children }) => {
   }, []);
 
   const updatePreferences = useCallback(async (updates) => {
-  if (!user?.id || !currentThreatActorId) return;
-  
-  try {
-    // Optimistically update local state
-    setCurrentPreferences(prev => ({ ...prev, ...updates }));
-    
-    // Update on server
-    const updatedPreferences = await userPreferencesService.updatePreferences(
-      user.id, 
-      currentThreatActorId, 
-      updates
-    );
-    setCurrentPreferences(updatedPreferences);
-    setHasAnyPreferences(true); // User definitely has preferences now
-    
-    // Refresh all preferences
-    await loadAllUserPreferences(user.id);
-  } catch (err) {
-    setError(err.message || 'Failed to update preferences');
-    // Reload preferences on error to sync with server
-    await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-  }
-}, [user?.id, currentThreatActorId, loadAllUserPreferences, loadPreferencesForThreatActor]);
-
-  // Update sophistication/resource weights
-  const updateWeights = useCallback(async (sophisticationWeight, resourceWeight) => {
     if (!user?.id || !currentThreatActorId) return;
     
     try {
       // Optimistically update local state
+      setCurrentPreferences(prev => ({ ...prev, ...updates }));
+      
+      // Update on server
+      const updatedPreferences = await userPreferencesService.updatePreferences(
+        user.id, 
+        currentThreatActorId, 
+        updates
+      );
+      setCurrentPreferences(updatedPreferences);
+      setHasAnyPreferences(true);
+      
+      // Refresh all preferences
+      await loadAllUserPreferences(user.id);
+    } catch (err) {
+      setError(err.message || 'Failed to update preferences');
+      // Reload preferences on error to sync with server
+      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
+    }
+  }, [user?.id, currentThreatActorId, loadAllUserPreferences, loadPreferencesForThreatActor]);
+
+  // Update sophistication weight only
+  const updateSophisticationWeight = useCallback(async (sophisticationWeight) => {
+    if (!user?.id || !currentThreatActorId) return;
+    
+    try {
       setCurrentPreferences(prev => ({
         ...prev,
         sophisticationResourceWeights: {
           sophisticationWeight,
-          resourceWeight
+          resourceWeight: 1 - sophisticationWeight
         }
       }));
       
-      const updatedPreferences = await userPreferencesService.updateSophisticationResourceWeights(
+      const updatedPreferences = await userPreferencesService.updateSophisticationWeight(
         user.id, 
         currentThreatActorId,
-        sophisticationWeight, 
-        resourceWeight
+        sophisticationWeight
       );
       setCurrentPreferences(updatedPreferences);
     } catch (err) {
-      setError(err.message || 'Failed to update weights');
+      setError(err.message || 'Failed to update sophistication weight');
       await loadPreferencesForThreatActor(user.id, currentThreatActorId);
     }
   }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
 
-  // Update motivation analysis
-  // const updateMotivationAnalysis = useCallback(async (motivationAnalysis) => {
-  //   if (!user?.id || !currentThreatActorId) return;
+  // Update motivation analysis only
+  const updateMotivationAnalysis = useCallback(async (motivationAnalysis) => {
+    if (!user?.id || !currentThreatActorId) return;
     
-  //   try {
-  //     // Optimistically update local state
-  //     setCurrentPreferences(prev => ({ ...prev, motivationAnalysis }));
+    try {
+      setCurrentPreferences(prev => ({ ...prev, motivationAnalysis }));
       
-  //     const updatedPreferences = await userPreferencesService.updateMotivationAnalysis(
-  //       user.id, 
-  //       currentThreatActorId,
-  //       motivationAnalysis
-  //     );
-  //     setCurrentPreferences(updatedPreferences);
-  //   } catch (err) {
-  //     setError(err.message || 'Failed to update motivation analysis');
-  //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-  //   }
-  // }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
+      const updatedPreferences = await userPreferencesService.updateMotivationAnalysis(
+        user.id, 
+        currentThreatActorId,
+        motivationAnalysis
+      );
+      setCurrentPreferences(updatedPreferences);
+    } catch (err) {
+      setError(err.message || 'Failed to update motivation analysis');
+      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
+    }
+  }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
 
-  // Update goals analysis
-  // const updateGoalsAnalysis = useCallback(async (goalsAnalysis) => {
-  //   if (!user?.id || !currentThreatActorId) return;
+  // Update goals analysis only
+  const updateGoalsAnalysis = useCallback(async (goalsAnalysis) => {
+    if (!user?.id || !currentThreatActorId) return;
     
-  //   try {
-  //     // Optimistically update local state
-  //     setCurrentPreferences(prev => ({ ...prev, goalsAnalysis }));
+    try {
+      setCurrentPreferences(prev => ({ ...prev, goalsAnalysis }));
       
-  //     const updatedPreferences = await userPreferencesService.updateGoalsAnalysis(
-  //       user.id, 
-  //       currentThreatActorId,
-  //       goalsAnalysis
-  //     );
-  //     setCurrentPreferences(updatedPreferences);
-  //   } catch (err) {
-  //     setError(err.message || 'Failed to update goals analysis');
-  //     await loadPreferencesForThreatActor(user.id, currentThreatActorId);
-  //   }
-  // }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
-  
+      const updatedPreferences = await userPreferencesService.updateGoalsAnalysis(
+        user.id, 
+        currentThreatActorId,
+        goalsAnalysis
+      );
+      setCurrentPreferences(updatedPreferences);
+    } catch (err) {
+      setError(err.message || 'Failed to update goals analysis');
+      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
+    }
+  }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
 
+  // REINTRODUCED: Common vulnerability level methods
+  const updateCommonVulnerabilityLevel = useCallback(async (vulnerabilityId, level) => {
+    if (!user?.id || !currentThreatActorId) return;
+    
+    try {
+      // Optimistically update local state
+      setCurrentPreferences(prev => {
+        const updatedCommonVulns = [...(prev?.commonVulnerabilitiesLevel || [])];
+        const existingIndex = updatedCommonVulns.findIndex(cv => cv.vulnerabilityId === vulnerabilityId);
+        
+        if (existingIndex !== -1) {
+          updatedCommonVulns[existingIndex].level = level;
+        } else {
+          updatedCommonVulns.push({ vulnerabilityId, level });
+        }
+        
+        return { ...prev, commonVulnerabilitiesLevel: updatedCommonVulns };
+      });
+      
+      const updatedPreferences = await userPreferencesService.updateCommonVulnerabilityLevel(
+        user.id, 
+        currentThreatActorId,
+        vulnerabilityId,
+        level
+      );
+      setCurrentPreferences(updatedPreferences);
+    } catch (err) {
+      setError(err.message || 'Failed to update vulnerability level');
+      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
+    }
+  }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
+
+  const updateCommonVulnerabilitiesLevelBulk = useCallback(async (commonVulnerabilitiesLevel) => {
+    if (!user?.id || !currentThreatActorId) return;
+    
+    try {
+      setCurrentPreferences(prev => ({ ...prev, commonVulnerabilitiesLevel }));
+      
+      const updatedPreferences = await userPreferencesService.updateCommonVulnerabilitiesLevelBulk(
+        user.id, 
+        currentThreatActorId,
+        commonVulnerabilitiesLevel
+      );
+      setCurrentPreferences(updatedPreferences);
+    } catch (err) {
+      setError(err.message || 'Failed to update vulnerability levels');
+      await loadPreferencesForThreatActor(user.id, currentThreatActorId);
+    }
+  }, [user?.id, currentThreatActorId, loadPreferencesForThreatActor]);
+
+  // REINTRODUCED: Get common vulnerability level helper function
   const getCommonVulnerabilityLevel = useCallback((vulnerabilityId) => {
     const commonVulns = currentPreferences?.commonVulnerabilitiesLevel;
     
-    // Add debugging
-    console.log('commonVulns:', commonVulns, 'type:', typeof commonVulns);
-    
     // Ensure it's an array
     if (!Array.isArray(commonVulns)) {
-      console.warn('commonVulnerabilitiesLevel is not an array:', commonVulns);
       return null;
     }
     
@@ -218,10 +245,6 @@ export const UserPreferencesProvider = ({ children }) => {
   }, [currentPreferences]);
 
   // Check if this is first time for any threat actor
-  // const isFirstTimeUser = useCallback(() => {
-  //   return allPreferences.length === 0;
-  // }, [allPreferences.length]);
-
   const isFirstTimeUser = useCallback(() => {
     // Only return true if we've checked and confirmed user has no preferences
     return hasLoadedAllPreferences && !hasAnyPreferences;
@@ -241,9 +264,11 @@ export const UserPreferencesProvider = ({ children }) => {
     loadPreferencesForThreatActor,
     loadAllUserPreferences,
     updatePreferences,
-    updateWeights,
-    // updateMotivationAnalysis,
-    // updateGoalsAnalysis,
+    updateSophisticationWeight,
+    updateMotivationAnalysis,
+    updateGoalsAnalysis,
+    updateCommonVulnerabilityLevel,
+    updateCommonVulnerabilitiesLevelBulk,
     clearError,
     
     // Helpers
@@ -256,9 +281,7 @@ export const UserPreferencesProvider = ({ children }) => {
     resourceWeight: currentPreferences?.sophisticationResourceWeights?.resourceWeight ?? 0.5,
     motivationAnalysis: currentPreferences?.motivationAnalysis ?? [],
     goalsAnalysis: currentPreferences?.goalsAnalysis ?? [],
-    vulnerabilities: currentPreferences?.vulnerabilities ?? [],
-    commonVulnerabilitiesLevel: currentPreferences?.commonVulnerabilitiesLevel ?? 'Moderate',
-    lossTypes: currentPreferences?.lossTypes ?? []
+    commonVulnerabilitiesLevel: currentPreferences?.commonVulnerabilitiesLevel ?? []
   };
 
   return (

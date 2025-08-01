@@ -13,12 +13,10 @@ import { Check, X } from 'lucide-react';
 import OnboardingTour from "@/components/OnboardingTour";
 import type { StepType } from "@reactour/tour";
 
-
-
 // Import your API service
 import threatActorService from '../services/threatActors';
 
-// TypeScript interfaces for getAll response
+// TypeScript interfaces
 interface ThreatActorSummary {
   id: string;
   name: string;
@@ -33,7 +31,6 @@ interface ThreatActorSummary {
   updatedAt: string;
 }
 
-// TypeScript interfaces for getById response (detailed)
 interface DetailedMotivation {
   name: string;
   relevanceLevel: string;
@@ -48,13 +45,6 @@ interface DetailedGoal {
   id: string;
 }
 
-interface DetailedExploit {
-  vulnerabilityId: string;
-  attackPattern: string;
-  toolMalwareUsed: string;
-  id: string;
-}
-
 interface DetailedThreatActor {
   id: string;
   name: string;
@@ -64,18 +54,9 @@ interface DetailedThreatActor {
   sector: string;
   motivations: DetailedMotivation[];
   goals: DetailedGoal[];
-  exploits: DetailedExploit[];
+  exploits: any[];
   createdAt: string;
   updatedAt: string;
-}
-
-interface Motivation {
-  motivationId: {
-    id: string,
-    name: string
-  },
-  weight: number,
-  relevanceLevel: string
 }
 
 const SOPHISTICATION_LEVELS: { [key: string]: number } = {
@@ -112,9 +93,7 @@ const SECTORS = [
   "Communication Services", "Utilities", "Real Estate"
 ];
 
-const COLORS = ["#8884d8", "#82ca9d"];
-
-const tasteps : StepType[]= [
+const tasteps: StepType[] = [
   {
     selector: "#tour-select-threat-actor",
     content: "Select a threat actor to analyse.",
@@ -127,17 +106,16 @@ const tasteps : StepType[]= [
   },
   {
     selector: "#tour-location-sector",
-    content: "Choose your organisation’s location & sector.",
+    content: "Choose your organisation's location & sector.",
     position: "top",
   },
   {
     selector: "#tour-tef-value",
-    content: "Here you’ll find the Threat Event Frequency (TEF) risk score.",
+    content: "Here you'll find the Threat Event Frequency (TEF) risk score.",
     position: "top",
   },
 ];
 
-//add function match to show icon
 function MatchIcon({ matched }: { matched: boolean }) {
   return matched ? (
     <Check className="text-red-400 w-8 h-8" strokeWidth={3} />
@@ -153,10 +131,8 @@ function HomeContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [saveLoading, setSaveLoading] = useState<boolean>(false);
-  // const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
-  const [hasCheckedFirstTime, setHasCheckedFirstTime] = useState(false);
 
-  // Form state - these will be synced with user preferences
+  // Form state
   const [orgLocation, setOrgLocation] = useState<string>("U.S.");
   const [orgSector, setOrgSector] = useState<string>("Energy");
 
@@ -165,36 +141,22 @@ function HomeContent() {
     preferences,
     loading: preferencesLoading,
     error: preferencesError,
-    hasLoadedAllPreferences,
     updatePreferences,
     loadPreferencesForThreatActor,
     loadAllUserPreferences,
     sophisticationWeight,
     resourceWeight,
     motivationAnalysis,
-    goalsAnalysis: contextGoalsAnalysis,
-    isFirstTimeUser
+    goalsAnalysis,
   } = useUserPreferences();
 
   const isSaving = useRef(false);
+  const hasLoadedPreferencesRef = useRef(false);
 
   const { setTefValue, selectedThreatActorId, setSelectedThreatActorId } = useAppContext();
   const { user, logout } = useAuth();
 
-  // Load preferences when threat actor changes
-  useEffect(() => {
-    if (user?.id && selectedThreatActorId) {
-      loadPreferencesForThreatActor(user.id, selectedThreatActorId);
-    }
-  }, [user?.id, selectedThreatActorId]); // Removed loadPreferencesForThreatActor from dependencies
-
-  useEffect(() => {
-    if (user?.id) {
-      loadAllUserPreferences(user.id);
-    }
-  }, [user?.id, loadAllUserPreferences]);
-
-  // Local state for immediate UI updates (will be saved to preferences on SAVE)
+  // Local state for immediate UI updates
   const [localW1, setLocalW1] = useState<number>(0.5);
   const [localW2, setLocalW2] = useState<number>(0.5);
   const [localMotivationWeights, setLocalMotivationWeights] = useState<{ [key: string]: number }>({});
@@ -202,108 +164,87 @@ function HomeContent() {
   const [localMotivationRelevanceLevels, setLocalMotivationRelevanceLevels] = useState<{ [key: string]: string }>({});
   const [localGoalRelevanceLevels, setLocalGoalRelevanceLevels] = useState<{ [key: string]: string }>({});
 
-
+  // Set organization location/sector from user data
   useEffect(() => {
     setOrgLocation(user?.organization?.location || "U.S.");
     setOrgSector(user?.organization?.sector || "Energy");
   }, [user]);
 
+  // Load preferences when threat actor changes
+  useEffect(() => {
+    if (user?.id && selectedThreatActorId) {
+      hasLoadedPreferencesRef.current = false;
+      loadPreferencesForThreatActor(user.id, selectedThreatActorId);
+    }
+  }, [user?.id, selectedThreatActorId, loadPreferencesForThreatActor]);
+
+  // Load all user preferences on mount
+  useEffect(() => {
+    if (user?.id) {
+      loadAllUserPreferences(user.id);
+    }
+  }, [user?.id, loadAllUserPreferences]);
+
+  // Initialize local state when threat actor changes (reset to defaults)
   useEffect(() => {
     if (selectedThreatActor && !isSaving.current) {
-      // Initialize all motivation weights if not already set
-      const newMotivationWeights = { ...localMotivationWeights };
-      let hasChanges = false;
+      console.log('Threat actor changed, initializing local state...');
       
-      selectedThreatActor.motivations.forEach(motivation => {
-        if (newMotivationWeights[motivation.id] === undefined) {
-          newMotivationWeights[motivation.id] = motivation.weight || (1.0 / selectedThreatActor.motivations.length);
-          hasChanges = true;
-        }
-      });
+      // Reset to defaults
+      setLocalW1(0.5);
+      setLocalW2(0.5);
+      setLocalMotivationWeights({});
+      setLocalGoalWeights({});
+      setLocalMotivationRelevanceLevels({});
+      setLocalGoalRelevanceLevels({});
       
-      if (hasChanges) {
-        setLocalMotivationWeights(newMotivationWeights);
-      }
-      
-      // Same for goals
-      const newGoalWeights = { ...localGoalWeights };
-      hasChanges = false;
-      
-      selectedThreatActor.goals.forEach(goal => {
-        if (newGoalWeights[goal.id] === undefined) {
-          newGoalWeights[goal.id] = goal.weight || (1.0 / selectedThreatActor.goals.length);
-          hasChanges = true;
-        }
-      });
-      
-      if (hasChanges) {
-        setLocalGoalWeights(newGoalWeights);
-      }
+      hasLoadedPreferencesRef.current = false;
     }
   }, [selectedThreatActor?.id]);
 
+  // Load preferences into local state (only once per threat actor)
   useEffect(() => {
-    if (!isSaving.current && preferences && selectedThreatActor) {
-      // Fix: Use threatActorId.id instead of threatActorId
-      if (preferences.threatActorId?.id === selectedThreatActor.id && 
-          motivationAnalysis.length > 0 && 
-          contextGoalsAnalysis.length > 0) {
+    if (!isSaving.current && preferences && selectedThreatActor && !hasLoadedPreferencesRef.current) {
+      // Check if these preferences are for the current threat actor
+      const preferenceThreatActorId = preferences.threatActorId?.id || preferences.threatActorId;
+      
+      if (preferenceThreatActorId === selectedThreatActor.id) {
+        console.log('Loading saved preferences into local state...');
         
-        // Update local state with the loaded preference values
+        // Load sophistication/resource weights
+        setLocalW1(sophisticationWeight);
+        setLocalW2(resourceWeight);
+        
+        // Load motivation preferences
         const motivationWeights: { [key: string]: number } = {};
         const motivationRelevance: { [key: string]: string } = {};
+        
         motivationAnalysis.forEach((motivation: any) => {
-          motivationWeights[motivation.motivationId] = motivation.weight;
-          motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
-          console.log(`Setting motivation ${motivation.motivationId}: weight=${motivation.weight}, relevance=${motivation.relevanceLevel}`);
+          // Handle different possible data structures
+          const motivationId = motivation.motivationId?.id || motivation.motivationId;
+          motivationWeights[motivationId] = motivation.weight;
+          motivationRelevance[motivationId] = motivation.relevanceLevel;
         });
         
+        // Load goal preferences
         const goalWeights: { [key: string]: number } = {};
         const goalRelevance: { [key: string]: string } = {};
-        contextGoalsAnalysis.forEach((goal: any) => {
-          goalWeights[goal.goalId] = goal.weight;
-          goalRelevance[goal.goalId] = goal.relevanceLevel;
-          console.log(`Setting goal ${goal.goalId}: weight=${goal.weight}, relevance=${goal.relevanceLevel}`);
+        
+        goalsAnalysis.forEach((goal: any) => {
+          const goalId = goal.goalId?.id || goal.goalId;
+          goalWeights[goalId] = goal.weight;
+          goalRelevance[goalId] = goal.relevanceLevel;
         });
         
         setLocalMotivationWeights(motivationWeights);
         setLocalGoalWeights(goalWeights);
         setLocalMotivationRelevanceLevels(motivationRelevance);
         setLocalGoalRelevanceLevels(goalRelevance);
-        setLocalW1(sophisticationWeight);
-        setLocalW2(resourceWeight);
+        
+        hasLoadedPreferencesRef.current = true;
       }
     }
-  }, [preferences?.updatedAt, selectedThreatActor?.id, motivationAnalysis.length, contextGoalsAnalysis.length]);
-
-  // Separate effect for when preferences are loaded/updated
-  useEffect(() => {
-    if (preferences && motivationAnalysis.length > 0 && contextGoalsAnalysis.length > 0 && !isSaving.current) {
-      // Update local state with the loaded preference values
-      const motivationWeights: { [key: string]: number } = {};
-      const motivationRelevance: { [key: string]: string } = {};
-      motivationAnalysis.forEach((motivation: any) => {
-        motivationWeights[motivation.motivationId] = motivation.weight;
-        motivationRelevance[motivation.motivationId] = motivation.relevanceLevel;
-      });
-      
-      const goalWeights: { [key: string]: number } = {};
-      const goalRelevance: { [key: string]: string } = {};
-      contextGoalsAnalysis.forEach((goal: any) => {
-        goalWeights[goal.goalId] = goal.weight;
-        goalRelevance[goal.goalId] = goal.relevanceLevel;
-      });
-      
-      setLocalMotivationWeights(motivationWeights);
-      setLocalGoalWeights(goalWeights);
-      setLocalMotivationRelevanceLevels(motivationRelevance);
-      setLocalGoalRelevanceLevels(goalRelevance);
-      setLocalW1(sophisticationWeight);
-      setLocalW2(resourceWeight);
-    }
-  }, [preferences?.updatedAt]); // Only when preferences actually change
-
-
+  }, [preferences, selectedThreatActor?.id, sophisticationWeight, resourceWeight, motivationAnalysis, goalsAnalysis]);
 
   // Fetch all threat actors on component mount
   useEffect(() => {
@@ -315,7 +256,7 @@ function HomeContent() {
         const data = await threatActorService.getAll();
         setThreatActors(data);
         
-        // Use first threat actor as default
+        // Use first threat actor as default if none selected
         if (data.length > 0 && !selectedThreatActorId) {
           setSelectedThreatActorId(data[0].id);
           await loadThreatActorDetails(data[0].id);
@@ -333,15 +274,12 @@ function HomeContent() {
     fetchThreatActors();
   }, []);
 
-  // Load threat actor details and preferences when selection changes
+  // Load threat actor details when selection changes
   useEffect(() => {
     if (selectedThreatActorId && threatActors.length > 0) {
-      const loadDetails = async () => {
-        await loadThreatActorDetails(selectedThreatActorId);
-      };
-      loadDetails();
+      loadThreatActorDetails(selectedThreatActorId);
     }
-  }, [selectedThreatActorId, threatActors.length]); // Removed loadThreatActorDetails from dependencies
+  }, [selectedThreatActorId, threatActors.length]);
 
   // Load detailed threat actor data
   const loadThreatActorDetails = useCallback(async (threatActorId: string) => {
@@ -361,10 +299,9 @@ function HomeContent() {
   const handleThreatActorChange = useCallback(async (threatActorId: string) => {
     setSelectedThreatActorId(threatActorId);
     await loadThreatActorDetails(threatActorId);
-    // Preferences will be loaded by the useEffect that watches selectedThreatActorId
-  }, [setSelectedThreatActorId]); // Removed loadThreatActorDetails from dependencies
+  }, [setSelectedThreatActorId, loadThreatActorDetails]);
 
-  // Weight adjustment handlers (local updates only)
+  // Weight adjustment handlers
   const handleW1Change = (value: number) => {
     const newW1 = value / 100;
     const newW2 = 1 - newW1;
@@ -372,36 +309,10 @@ function HomeContent() {
     setLocalW2(newW2);
   };
 
-  // const handleMotivationWeightChange = (motivationId: string, value: number) => {
-  //   if (!selectedThreatActor) return;
-    
-  //   const newWeight = value / 100;
-  //   const otherMotivations = selectedThreatActor.motivations.filter(m => m.id !== motivationId);
-    
-  //   if (otherMotivations.length === 0) {
-  //     setLocalMotivationWeights({ [motivationId]: 1.0 });
-  //     return;
-  //   }
-    
-  //   const remainingWeight = 1.0 - newWeight;
-  //   const weightPerOther = remainingWeight / otherMotivations.length;
-    
-  //   const newWeights = { ...localMotivationWeights };
-  //   newWeights[motivationId] = newWeight;
-    
-  //   otherMotivations.forEach(motivation => {
-  //     newWeights[motivation.id] = weightPerOther;
-  //   });
-    
-  //   setLocalMotivationWeights(newWeights);
-  // };
   const handleMotivationWeightChange = (motivationId: string, value: number) => {
     if (!selectedThreatActor) return;
     
     const newWeight = value / 100;
-    const oldWeight = localMotivationWeights[motivationId] || 0;
-    const weightDifference = newWeight - oldWeight;
-    
     const otherMotivations = selectedThreatActor.motivations.filter(m => m.id !== motivationId);
     
     if (otherMotivations.length === 0) {
@@ -409,28 +320,15 @@ function HomeContent() {
       return;
     }
     
-    // Calculate total weight of other motivations
-    const totalOtherWeight = otherMotivations.reduce((sum, m) => 
-      sum + (localMotivationWeights[m.id] || 0), 0
-    );
+    const remainingWeight = Math.max(0, 1.0 - newWeight);
+    const weightPerOther = remainingWeight / otherMotivations.length;
     
     const newWeights = { ...localMotivationWeights };
     newWeights[motivationId] = newWeight;
     
-    // Redistribute the difference proportionally
-    if (totalOtherWeight > 0) {
-      otherMotivations.forEach(motivation => {
-        const currentWeight = localMotivationWeights[motivation.id] || 0;
-        const proportion = currentWeight / totalOtherWeight;
-        newWeights[motivation.id] = Math.max(0, currentWeight - (weightDifference * proportion));
-      });
-    } else {
-      // If all others are 0, distribute equally
-      const weightPerOther = (1 - newWeight) / otherMotivations.length;
-      otherMotivations.forEach(motivation => {
-        newWeights[motivation.id] = weightPerOther;
-      });
-    }
+    otherMotivations.forEach(motivation => {
+      newWeights[motivation.id] = weightPerOther;
+    });
     
     // Normalize to ensure sum = 1
     const sum = Object.values(newWeights).reduce((a, b) => a + b, 0);
@@ -454,7 +352,7 @@ function HomeContent() {
       return;
     }
     
-    const remainingWeight = 1.0 - newWeight;
+    const remainingWeight = Math.max(0, 1.0 - newWeight);
     const weightPerOther = remainingWeight / otherGoals.length;
     
     const newWeights = { ...localGoalWeights };
@@ -481,53 +379,77 @@ function HomeContent() {
     }));
   };
 
-  // Update the save handler to prevent reset during save
-const handleSavePreferences = async () => {
-  if (!selectedThreatActor || !user?.id) return;
-  
-  setSaveLoading(true);
-  isSaving.current = true; // Prevent useEffect from resetting during save
-  
-  try {
-    // Prepare motivation analysis data
-    const motivationAnalysis = selectedThreatActor.motivations.map(motivation => ({
-      motivationId: motivation.id,
-      relevanceLevel: localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel,
-      weight: localMotivationWeights[motivation.id] !== undefined ? localMotivationWeights[motivation.id] : motivation.weight
-    }));
-
-    // Prepare goals analysis data
-    const goalsAnalysis = selectedThreatActor.goals.map(goal => ({
-      goalId: goal.id,
-      relevanceLevel: localGoalRelevanceLevels[goal.id] || goal.relevanceLevel,
-      weight: localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight
-    }));
-
-    // Update preferences for this specific threat actor
-    await updatePreferences({
-      sophisticationResourceWeights: {
-        sophisticationWeight: localW1,
-        resourceWeight: localW2
-      },
-      motivationAnalysis,
-      goalsAnalysis
-    });
-
-    // Hide welcome banner after successful save (user is no longer first-time)
-    // setShowWelcomeBanner(false);
+  // Save preferences handler
+  const handleSavePreferences = async () => {
+    if (!selectedThreatActor || !user?.id || isSaving.current) return;
     
-    alert('Preferences saved successfully for ' + selectedThreatActor.name + '!');
-  } catch (err) {
-    console.error('Failed to save preferences:', err);
-    alert('Failed to save preferences. Please try again.');
-  } finally {
-    setSaveLoading(false);
-    // Small delay to ensure context has updated before allowing resets
-    setTimeout(() => {
-      isSaving.current = false;
-    }, 100);
-  }
-};
+    setSaveLoading(true);
+    isSaving.current = true;
+    
+    try {
+      // Normalize weights to ensure they sum to 1
+      const normalizeWeights = (weights: { [key: string]: number }) => {
+        const sum = Object.values(weights).reduce((a, b) => a + b, 0);
+        if (sum === 0) return weights;
+        
+        const normalized: { [key: string]: number } = {};
+        Object.keys(weights).forEach(key => {
+          normalized[key] = weights[key] / sum;
+        });
+        return normalized;
+      };
+      
+      const normalizedMotivationWeights = normalizeWeights(localMotivationWeights);
+      const normalizedGoalWeights = normalizeWeights(localGoalWeights);
+      
+      // Prepare motivation analysis data
+      const motivationAnalysisData = selectedThreatActor.motivations.map(motivation => ({
+        motivationId: motivation.id,
+        relevanceLevel: localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel || 'Moderate',
+        weight: normalizedMotivationWeights[motivation.id] || (1.0 / selectedThreatActor.motivations.length)
+      }));
+
+      // Prepare goals analysis data
+      const goalsAnalysisData = selectedThreatActor.goals.map(goal => ({
+        goalId: goal.id,
+        relevanceLevel: localGoalRelevanceLevels[goal.id] || goal.relevanceLevel || 'Moderate',
+        weight: normalizedGoalWeights[goal.id] || (1.0 / selectedThreatActor.goals.length)
+      }));
+
+      console.log('Saving preferences:', {
+        sophisticationResourceWeights: {
+          sophisticationWeight: localW1,
+          resourceWeight: localW2
+        },
+        motivationAnalysis: motivationAnalysisData,
+        goalsAnalysis: goalsAnalysisData
+      });
+
+      // Update preferences
+      await updatePreferences({
+        sophisticationResourceWeights: {
+          sophisticationWeight: localW1,
+          resourceWeight: localW2
+        },
+        motivationAnalysis: motivationAnalysisData,
+        goalsAnalysis: goalsAnalysisData
+      });
+
+      // Update local state with normalized values
+      setLocalMotivationWeights(normalizedMotivationWeights);
+      setLocalGoalWeights(normalizedGoalWeights);
+      
+      alert('Preferences saved successfully for ' + selectedThreatActor.name + '!');
+    } catch (err) {
+      console.error('Failed to save preferences:', err);
+      alert('Failed to save preferences. Please try again.');
+    } finally {
+      setSaveLoading(false);
+      setTimeout(() => {
+        isSaving.current = false;
+      }, 500);
+    }
+  };
 
   // Calculations using local state
   const sophisticationValue = selectedThreatActor 
@@ -538,138 +460,36 @@ const handleSavePreferences = async () => {
     ? (RESOURCE_LEVELS[selectedThreatActor.resourceLevel] || 0)
     : 0;
 
-
-  // Debug: Log the actual state values
-console.log("=== DEBUG TEF Calculation ===");
-console.log("localMotivationRelevanceLevels:", localMotivationRelevanceLevels);
-console.log("localGoalRelevanceLevels:", localGoalRelevanceLevels);
-
-if (selectedThreatActor) {
-  console.log("\n--- Motivation Values ---");
-  selectedThreatActor.motivations.forEach(motivation => {
-    const idStr = String(motivation.id);
-    const localRelevance = localMotivationRelevanceLevels[idStr];
-    const defaultRelevance = motivation.relevanceLevel;
-    const usedRelevance = localRelevance || defaultRelevance || "Moderate";
-    
-    console.log(`${motivation.name} (${motivation.id}):`, {
-      localRelevance,
-      defaultRelevance,
-      usedRelevance,
-      relevanceValue: RELEVANCE_LEVELS[usedRelevance]
-    });
-  });
-}
-  // Calculate motivation scores using local weights and relevance levels
-  // Calculate motivation scores - ensure consistent defaults
-const motivationScore = selectedThreatActor 
-  ? selectedThreatActor.motivations.reduce((total, motivation) => {
-      // Handle both cases: with and without preferences
-      let idStr;
-      let relevanceLevel;
-      let weight;
-      
-      if (motivationAnalysis.length > 0) {
-        // When preferences exist, find the matching motivation
-        const prefMotivation = motivationAnalysis.find((m: any) => 
-          m.motivationId.name === motivation.name || 
-          m.motivationId.id === motivation.id
-        );
+  // Calculate motivation scores using local state
+  const motivationScore = selectedThreatActor 
+    ? selectedThreatActor.motivations.reduce((total, motivation) => {
+        const relevanceLevel = localMotivationRelevanceLevels[motivation.id] || motivation.relevanceLevel || "Moderate";
+        const weight = localMotivationWeights[motivation.id] !== undefined 
+          ? localMotivationWeights[motivation.id] 
+          : (1.0 / selectedThreatActor.motivations.length);
         
-        if (prefMotivation) {
-          idStr = String(prefMotivation.motivationId.id);
-          relevanceLevel = localMotivationRelevanceLevels[idStr] || prefMotivation.relevanceLevel || "Moderate";
-          weight = localMotivationWeights[idStr] !== undefined 
-            ? localMotivationWeights[idStr] 
-            : prefMotivation.weight;
-        } else {
-          // Fallback if not found in preferences
-          idStr = String(motivation.id);
-          relevanceLevel = localMotivationRelevanceLevels[idStr] || motivation.relevanceLevel || "Moderate";
-          weight = localMotivationWeights[idStr] !== undefined 
-            ? localMotivationWeights[idStr] 
-            : motivation.weight || (1.0 / selectedThreatActor.motivations.length);
-        }
-      } else {
-        // No preferences - use threat actor data directly
-        idStr = String(motivation.id);
-        relevanceLevel = localMotivationRelevanceLevels[idStr] || motivation.relevanceLevel || "Moderate";
-        weight = localMotivationWeights[idStr] !== undefined 
-          ? localMotivationWeights[idStr] 
-          : motivation.weight || (1.0 / selectedThreatActor.motivations.length);
-      }
-      
-      const relevanceValue = RELEVANCE_LEVELS[relevanceLevel] || 0;
-      
-      console.log(`Calc ${motivation.name}:`, { idStr, relevanceLevel, relevanceValue, weight });
-      
-      return total + (relevanceValue * weight);
-    }, 0)
-  : 0;
+        const relevanceValue = RELEVANCE_LEVELS[relevanceLevel] || 0;
+        return total + (relevanceValue * weight);
+      }, 0)
+    : 0;
 
-// Calculate goal scores - ensure consistent defaults
-const goalScore = selectedThreatActor 
-  ? selectedThreatActor.goals.reduce((total, goal) => {
-      let idStr;
-      let relevanceLevel;
-      let weight;
-      
-      if (contextGoalsAnalysis.length > 0) {
-        const prefGoal = contextGoalsAnalysis.find((g:any) => 
-          g.goalId.name === goal.name || 
-          g.goalId.id === goal.id
-        );
+  // Calculate goal scores using local state
+  const goalScore = selectedThreatActor 
+    ? selectedThreatActor.goals.reduce((total, goal) => {
+        const relevanceLevel = localGoalRelevanceLevels[goal.id] || goal.relevanceLevel || "Moderate";
+        const weight = localGoalWeights[goal.id] !== undefined 
+          ? localGoalWeights[goal.id] 
+          : (1.0 / selectedThreatActor.goals.length);
         
-        if (prefGoal) {
-          idStr = String(prefGoal.goalId.id);
-          relevanceLevel = localGoalRelevanceLevels[idStr] || prefGoal.relevanceLevel || "Moderate";
-          weight = localGoalWeights[idStr] !== undefined 
-            ? localGoalWeights[idStr] 
-            : prefGoal.weight;
-        } else {
-          idStr = String(goal.id);
-          relevanceLevel = localGoalRelevanceLevels[idStr] || goal.relevanceLevel || "Moderate";
-          weight = localGoalWeights[idStr] !== undefined 
-            ? localGoalWeights[idStr] 
-            : goal.weight || (1.0 / selectedThreatActor.goals.length);
-        }
-      } else {
-        idStr = String(goal.id);
-        relevanceLevel = localGoalRelevanceLevels[idStr] || goal.relevanceLevel || "Moderate";
-        weight = localGoalWeights[idStr] !== undefined 
-          ? localGoalWeights[idStr] 
-          : goal.weight || (1.0 / selectedThreatActor.goals.length);
-      }
-      
-      const relevanceValue = RELEVANCE_LEVELS[relevanceLevel] || 0;
-      return total + (relevanceValue * weight);
-    }, 0)
-  : 0;
-
-  // Add this after your calculations
-  // const motivationWeightSum = selectedThreatActor?.motivations.reduce((sum, m) => 
-  //   sum + (localMotivationWeights[m.id] || 0), 0) || 0;
-
-  // const goalWeightSum = selectedThreatActor?.goals.reduce((sum, g) => 
-  //   sum + (localGoalWeights[g.id] || 0), 0) || 0;
-
-  // console.log('Weight sums:', { motivationWeightSum, goalWeightSum });
-
-  // // Calculate goal scores using local weights and relevance levels
-  // const goalScore = selectedThreatActor 
-  //   ? selectedThreatActor.goals.reduce((total, goal) => {
-  //       const customRelevanceLevel = localGoalRelevanceLevels[goal.id] || goal.relevanceLevel;
-  //       const relevanceValue = RELEVANCE_LEVELS[customRelevanceLevel] || 0;
-  //       const customWeight = localGoalWeights[goal.id] !== undefined ? localGoalWeights[goal.id] : goal.weight;
-  //       return total + (relevanceValue * customWeight);
-  //     }, 0)
-  //   : 0;
+        const relevanceValue = RELEVANCE_LEVELS[relevanceLevel] || 0;
+        return total + (relevanceValue * weight);
+      }, 0)
+    : 0;
   
   const locationMatchScore = selectedThreatActor && orgLocation === selectedThreatActor.location ? 1 : 0;
   const sectorMatchScore = selectedThreatActor && orgSector === selectedThreatActor.sector ? 1 : 0;
 
   const threatAbility = sophisticationValue * localW1 + resourceValue * localW2;
-
   const tefValue = threatAbility * motivationScore * goalScore * locationMatchScore * sectorMatchScore;
 
   useEffect(() => {
@@ -702,47 +522,10 @@ const goalScore = selectedThreatActor
     );
   }
 
-
   return (
     <div className="flex h-screen bg-gray-900 text-white">
-
-      {/* Welcome Banner for First Time Users */}
-      {/* {showWelcomeBanner && (
-        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 z-50 shadow-lg border-b-4 border-blue-400">
-          <div className="flex justify-between items-center max-w-7xl mx-auto">
-            <div className="flex items-center space-x-4">
-              <div className="bg-blue-800 rounded-full p-3 flex-shrink-0">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Welcome to Threat Actor Analysis! 🎉</h3>
-                <p className="text-sm text-blue-100">
-                  This is your first time using the system. Start by selecting a threat actor, then adjust weights and save your preferences.
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={() => {
-                setShowWelcomeBanner(false);
-              }}
-              className="bg-blue-800 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 flex-shrink-0 ml-4"
-              title="Dismiss welcome message"
-            >
-              <span>Got it!</span>
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )} */}
-
       {/* Sidebar Navigation */}
       <div className="w-1/4 bg-gray-800 p-6 z-60">
-        {/* User Info Section */}
-
         <h2 className="text-2xl font-bold mb-4">Navigation</h2>
         <nav className="flex flex-col space-y-4">
           <Link
@@ -791,55 +574,13 @@ const goalScore = selectedThreatActor
               </button>
             </div>
           </div>
-
-
-            {/* Admin-only User Management Link */}
-            {/* {hasRole(['admin']) && (
-              <Link
-                href="/users"
-                className="p-3 bg-purple-700 text-white rounded-md hover:bg-purple-600 transition-colors border-l-4 border-purple-400">
-                <div className="flex items-center justify-between">
-                  <span>User Management</span>
-                  <span className="text-xs bg-purple-500 px-2 py-1 rounded">ADMIN</span>
-                </div>
-              </Link>
-            )} */}
         </nav>
-
-        {/* User Role Info */}
-        {/* <div className="mt-6 p-3 bg-gray-700 rounded-lg">
-          <h4 className="text-sm font-semibold text-gray-300 mb-2">Access Level</h4>
-          <div className="text-xs text-gray-400">
-            {user?.type === 'admin' && (
-              <div>
-                <p>✓ Full system access</p>
-                <p>✓ User management</p>
-                <p>✓ All analysis tools</p>
-              </div>
-            )}
-            {user?.type === 'analyst' && (
-              <div>
-                <p>✓ All analysis tools</p>
-                <p>✓ Data modification</p>
-                <p>⨯ User management</p>
-              </div>
-            )}
-            {user?.type === 'viewer' && (
-              <div>
-                <p>✓ View analysis</p>
-                <p>⨯ Data modification</p>
-                <p>⨯ User management</p>
-              </div>
-            )}
-          </div>
-        </div> */}
       </div>
 
       {/* Main Content */}
       <div className="w-3/4 p-6 space-y-8 overflow-y-auto">
         {threatActors.length > 0 && (
-          <Card id="tour-select-threat-actor z-60"
-                className="p-4 bg-gray-800">
+          <Card id="tour-select-threat-actor" className="p-4 bg-gray-800">
             <h2 className="text-xl font-semibold mb-2 text-white">Select Threat Actor</h2>
             <Select onValueChange={handleThreatActorChange} value={selectedThreatActorId || ""}>
               <SelectTrigger className="z-[60] w-full p-2 border rounded-md bg-white text-black">
@@ -866,96 +607,92 @@ const goalScore = selectedThreatActor
 
         {/* Sophistication and Resource Level */}
         <div className="flex justify-between space-x-6">
-          {/* Sophistication Level */}
           <Card className="p-4 w-1/2">
             <h2 className="text-xl font-semibold">Sophistication Level</h2>
             <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
               <span className="font-medium">{selectedThreatActor?.sophisticationLevel || "Not Available"}</span>
             </div>
-           <div className="flex justify-center ">
-  <BarChart
-    width={450}
-    height={60}
-    data={[{
-      name: 'score',
-      value: sophisticationValue,
-      remain: 1 - sophisticationValue,
-    }]}
-    layout="vertical"
-    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-  >
-    <XAxis type="number" domain={[0, 1]} hide />
-    <YAxis type="category" dataKey="name" hide />
-    <Bar
-      dataKey="value"
-      stackId="a"
-      fill="#5b8df6"
-      isAnimationActive={false}
-      radius={[4, 0, 0, 4]}
-    >
-      <LabelList
-        dataKey="value"
-        position="center"
-        formatter={(v: number) => v.toFixed(3)}
-        fill="#fff"
-      />
-    </Bar>
-
-    <Bar
-      dataKey="remain"
-      stackId="a"
-      fill="#a4c4ff"
-      isAnimationActive={false}
-      radius={[0, 4, 4, 0]}
-    />
-  </BarChart>
-</div>
+            <div className="flex justify-center">
+              <BarChart
+                width={450}
+                height={60}
+                data={[{
+                  name: 'score',
+                  value: sophisticationValue,
+                  remain: 1 - sophisticationValue,
+                }]}
+                layout="vertical"
+                margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+              >
+                <XAxis type="number" domain={[0, 1]} hide />
+                <YAxis type="category" dataKey="name" hide />
+                <Bar
+                  dataKey="value"
+                  stackId="a"
+                  fill="#5b8df6"
+                  isAnimationActive={false}
+                  radius={[4, 0, 0, 4]}
+                >
+                  <LabelList
+                    dataKey="value"
+                    position="center"
+                    formatter={(v: number) => v.toFixed(3)}
+                    fill="#fff"
+                  />
+                </Bar>
+                <Bar
+                  dataKey="remain"
+                  stackId="a"
+                  fill="#a4c4ff"
+                  isAnimationActive={false}
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </div>
           </Card>
 
-          {/* Resource Level */}
           <Card className="p-4 w-1/2">
             <h2 className="text-xl font-semibold">Resource Level</h2>
             <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
               <span className="font-medium">{selectedThreatActor?.resourceLevel || "Not Available"}</span>
             </div>
-<div className="flex justify-center ">
-  <BarChart
-    width={450}
-    height={60}
-    data={[{
-      name: 'score',
-      value: resourceValue,
-      remain: 1 - resourceValue,
-    }]}
-    layout="vertical"
-    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-  >
-     <XAxis type="number" domain={[0, 1]} hide />
-    <YAxis type="category" dataKey="name" hide />
-    <Bar
-      dataKey="value"
-      stackId="a"
-      fill="#5b8df6"
-      isAnimationActive={false}
-      radius={[4, 0, 0, 4]}
-    >
-      <LabelList
-        dataKey="value"
-        position="center"
-        formatter={(v: number) => v.toFixed(3)}
-        fill="#fff"
-      />
-    </Bar>
-
-    <Bar
-      dataKey="remain"
-      stackId="a"
-      fill="#a4c4ff"
-      isAnimationActive={false}
-      radius={[0, 4, 4, 0]}
-    />
-  </BarChart>
-</div>
+            <div className="flex justify-center">
+              <BarChart
+                width={450}
+                height={60}
+                data={[{
+                  name: 'score',
+                  value: resourceValue,
+                  remain: 1 - resourceValue,
+                }]}
+                layout="vertical"
+                margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+              >
+                <XAxis type="number" domain={[0, 1]} hide />
+                <YAxis type="category" dataKey="name" hide />
+                <Bar
+                  dataKey="value"
+                  stackId="a"
+                  fill="#5b8df6"
+                  isAnimationActive={false}
+                  radius={[4, 0, 0, 4]}
+                >
+                  <LabelList
+                    dataKey="value"
+                    position="center"
+                    formatter={(v: number) => v.toFixed(3)}
+                    fill="#fff"
+                  />
+                </Bar>
+                <Bar
+                  dataKey="remain"
+                  stackId="a"
+                  fill="#a4c4ff"
+                  isAnimationActive={false}
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </div>
           </Card>
         </div>
 
@@ -970,8 +707,6 @@ const goalScore = selectedThreatActor
             </div>
             
             <div className="mb-2">
-              <label className="block text-sm text-gray-300 mb-1">
-              </label>
               <input
                 type="range"
                 min="0"
@@ -1000,78 +735,21 @@ const goalScore = selectedThreatActor
           <Card className="p-4 flex-1 bg-gray-800">
             <h2 className="text-xl font-semibold mb-4 text-white">Motivation Analysis</h2>
             
-            {motivationAnalysis.length === 0 ? (
-              // NO PREFERENCES - Show threat actor motivations with defaults
-              selectedThreatActor?.motivations && selectedThreatActor.motivations.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedThreatActor.motivations.map((motivation, index) => {
-                    const motivationIdStr = String(motivation.id);
-                    const defaultWeight = 1.0 / selectedThreatActor.motivations.length;
-                    const currentWeight = localMotivationWeights[motivationIdStr] !== undefined ? localMotivationWeights[motivationIdStr] : defaultWeight;
-                    const currentRelevance = localMotivationRelevanceLevels[motivationIdStr] || "Moderate";
-                    const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
-                    
-                    return (
-                      <div key={motivation.id} className="p-4 bg-gray-700 rounded-md">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="font-medium text-white">{motivation.name}</span>
-                          <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
-                        </div>
-                        
-                        {/* Relevance Level Selector */}
-                        <div className="mb-3">
-                          <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
-                          <Select 
-                            onValueChange={(value) => handleMotivationRelevanceChange(motivationIdStr, value)} 
-                            value={currentRelevance}
-                          >
-                            <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.keys(RELEVANCE_LEVELS).map((level) => (
-                                <SelectItem key={level} value={level}>
-                                  {level} ({RELEVANCE_LEVELS[level]})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {/* Weight Slider */}
-                        <div>
-                          <label className="block text-sm text-gray-300 mb-1">
-                            Weight: {currentWeight.toFixed(3)} (Slider: {(currentWeight * 100).toFixed(0)})
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={currentWeight * 100}
-                            onChange={(e) => handleMotivationWeightChange(motivationIdStr, Number(e.target.value))}
-                            className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-gray-400">No motivations available</div>
-              )
-            ) : (
-              // HAS PREFERENCES - Show motivationAnalysis directly
+            {selectedThreatActor?.motivations && selectedThreatActor.motivations.length > 0 ? (
               <div className="space-y-4">
-                {motivationAnalysis.map((motivation: Motivation, index: number) => {
-                  const motivationIdStr = String(motivation.motivationId.id);
-                  const currentWeight = localMotivationWeights[motivationIdStr] !== undefined ? localMotivationWeights[motivationIdStr] : motivation.weight;
-                  const currentRelevance = localMotivationRelevanceLevels[motivationIdStr] || motivation.relevanceLevel;
+                {selectedThreatActor.motivations.map((motivation) => {
+                  const motivationIdStr = String(motivation.id);
+                  const defaultWeight = 1.0 / selectedThreatActor.motivations.length;
+                  const currentWeight = localMotivationWeights[motivationIdStr] !== undefined 
+                    ? localMotivationWeights[motivationIdStr] 
+                    : defaultWeight;
+                  const currentRelevance = localMotivationRelevanceLevels[motivationIdStr] || motivation.relevanceLevel || "Moderate";
                   const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
                   
                   return (
-                    <div key={motivation.motivationId.id} className="p-4 bg-gray-700 rounded-md">
+                    <div key={`motivation-${motivation.id}`} className="p-4 bg-gray-700 rounded-md">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white">{motivation.motivationId.name}</span>
+                        <span className="font-medium text-white">{motivation.name}</span>
                         <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
                       </div>
                       
@@ -1113,6 +791,8 @@ const goalScore = selectedThreatActor
                   );
                 })}
               </div>
+            ) : (
+              <div className="text-gray-400">No motivations available</div>
             )}
 
             {/* Total Motivation Score */}
@@ -1126,78 +806,21 @@ const goalScore = selectedThreatActor
           <Card className="p-4 flex-1 bg-gray-800">
             <h2 className="text-xl font-semibold mb-4 text-white">Goals Analysis</h2>
 
-            {contextGoalsAnalysis.length === 0 ? (
-              // NO PREFERENCES - Show threat actor goals with defaults
-              selectedThreatActor?.goals && selectedThreatActor.goals.length > 0 ? (
-                <div className="space-y-4">
-                  {selectedThreatActor.goals.map((goal, index) => {
-                    const goalIdStr = String(goal.id);
-                    const defaultWeight = 1.0 / selectedThreatActor.goals.length;
-                    const currentWeight = localGoalWeights[goalIdStr] !== undefined ? localGoalWeights[goalIdStr] : defaultWeight;
-                    const currentRelevance = localGoalRelevanceLevels[goalIdStr] || "Moderate";
-                    const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
-                    
-                    return (
-                      <div key={goal.id} className="p-4 bg-gray-700 rounded-md">
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="font-medium text-white">{goal.name}</span>
-                          <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
-                        </div>
-                        
-                        {/* Relevance Level Selector */}
-                        <div className="mb-3">
-                          <label className="block text-sm text-gray-300 mb-1">Relevance Level</label>
-                          <Select 
-                            onValueChange={(value) => handleGoalRelevanceChange(goalIdStr, value)} 
-                            value={currentRelevance}
-                          >
-                            <SelectTrigger className="w-full p-2 border rounded-md bg-white text-black">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.keys(RELEVANCE_LEVELS).map((level) => (
-                                <SelectItem key={level} value={level}>
-                                  {level} ({RELEVANCE_LEVELS[level]})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {/* Weight Slider */}
-                        <div>
-                          <label className="block text-sm text-gray-300 mb-1">
-                            Weight: {currentWeight.toFixed(3)}
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={currentWeight * 100}
-                            onChange={(e) => handleGoalWeightChange(goalIdStr, Number(e.target.value))}
-                            className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-gray-400">No goals available</div>
-              )
-            ) : (
-              // HAS PREFERENCES - Show contextGoalsAnalysis directly
+            {selectedThreatActor?.goals && selectedThreatActor.goals.length > 0 ? (
               <div className="space-y-4">
-                {contextGoalsAnalysis.map((goal: any, index: number) => {
-                  const goalIdStr = String(goal.goalId.id);
-                  const currentWeight = localGoalWeights[goalIdStr] !== undefined ? localGoalWeights[goalIdStr] : goal.weight;
-                  const currentRelevance = localGoalRelevanceLevels[goalIdStr] || goal.relevanceLevel;
+                {selectedThreatActor.goals.map((goal) => {
+                  const goalIdStr = String(goal.id);
+                  const defaultWeight = 1.0 / selectedThreatActor.goals.length;
+                  const currentWeight = localGoalWeights[goalIdStr] !== undefined 
+                    ? localGoalWeights[goalIdStr] 
+                    : defaultWeight;
+                  const currentRelevance = localGoalRelevanceLevels[goalIdStr] || goal.relevanceLevel || "Moderate";
                   const score = (RELEVANCE_LEVELS[currentRelevance] || 0) * currentWeight;
                   
                   return (
-                    <div key={goal.goalId.id} className="p-4 bg-gray-700 rounded-md">
+                    <div key={`goal-${goal.id}`} className="p-4 bg-gray-700 rounded-md">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium text-white">{goal.goalId.name}</span>
+                        <span className="font-medium text-white">{goal.name}</span>
                         <span className="text-sm text-gray-300">Score: {score.toFixed(3)}</span>
                       </div>
                       
@@ -1239,6 +862,8 @@ const goalScore = selectedThreatActor
                   );
                 })}
               </div>
+            ) : (
+              <div className="text-gray-400">No goals available</div>
             )}
 
             {/* Total Goal Score */}
@@ -1255,7 +880,6 @@ const goalScore = selectedThreatActor
           <Card className="p-4 flex-1">
             <h2 className="text-xl font-semibold mb-2">Location Match</h2>
 
-            {/* Organization Location */}
             <div className="mb-4">
               <h3 className="text-lg">Organization Location</h3>
               <Select onValueChange={setOrgLocation} value={orgLocation}>
@@ -1272,7 +896,6 @@ const goalScore = selectedThreatActor
               </Select>
             </div>
 
-            {/* Threat Actor Location */}
             <div className="mb-4">
               <h3 className="text-lg">Threat Actor Location</h3>
               <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
@@ -1280,24 +903,18 @@ const goalScore = selectedThreatActor
               </div>
             </div>
 
-            {/* UI for Location Match */}
             <div className="flex items-center justify-center space-x-3 mt-2">
               <MatchIcon matched={locationMatchScore === 1} />
-                          <span
-                className={`text-2xl font-semibold ${
-                  locationMatchScore === 1 ? 'text-red-500' : 'text-green-500'
-    }`}
-  >
-    {locationMatchScore}
-  </span>
-</div>
+              <span className={`text-2xl font-semibold ${locationMatchScore === 1 ? 'text-red-500' : 'text-green-500'}`}>
+                {locationMatchScore}
+              </span>
+            </div>
           </Card>
 
           {/* Sector Match */}
           <Card className="p-4 flex-1">
             <h2 className="text-xl font-semibold mb-2">Sector Match</h2>
 
-            {/* Organization Sector */}
             <div className="mb-4">
               <h3 className="text-lg">Organization Sector</h3>
               <Select onValueChange={setOrgSector} value={orgSector}>
@@ -1314,7 +931,6 @@ const goalScore = selectedThreatActor
               </Select>
             </div>
 
-            {/* Threat Actor Sector */}
             <div className="mb-4">
               <h3 className="text-lg">Threat Actor Sector</h3>
               <div className="w-full p-3 border rounded-md bg-gray-700 text-white">
@@ -1322,16 +938,12 @@ const goalScore = selectedThreatActor
               </div>
             </div>
 
-            {/* Bar Chart for Sector Match */}
-             <div className="flex items-center justify-center space-x-3 mt-2">
-  <MatchIcon matched={sectorMatchScore === 1} />
-              <span
-    className={`text-2xl font-semibold ${
-      sectorMatchScore === 1 ? 'text-red-500' : 'text-green-500'}`}
-  >
-    {sectorMatchScore}
-  </span>
-</div>
+            <div className="flex items-center justify-center space-x-3 mt-2">
+              <MatchIcon matched={sectorMatchScore === 1} />
+              <span className={`text-2xl font-semibold ${sectorMatchScore === 1 ? 'text-red-500' : 'text-green-500'}`}>
+                {sectorMatchScore}
+              </span>
+            </div>
           </Card>
         </div>
 
@@ -1407,7 +1019,7 @@ const goalScore = selectedThreatActor
               </div>
               <div>
                 <span className="text-gray-300">Goals Configured:</span>
-                <span className="text-white ml-2">{contextGoalsAnalysis.length}</span>
+                <span className="text-white ml-2">{goalsAnalysis.length}</span>
               </div>
             </div>
             <div className="mt-4 text-xs text-gray-400">
@@ -1417,9 +1029,7 @@ const goalScore = selectedThreatActor
         )}
       </div>
 
-
       <OnboardingTour steps={tasteps} storageKey="tour_done_ta" />
-
     </div>
   );
 }
