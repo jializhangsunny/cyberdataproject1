@@ -47,6 +47,15 @@ frontend/
 │   └── appcontext.tsx # LEF, TEF values & local storage
 └── ...
 ```
+NOTE: you might have to change the following line in `authContext.tsx`:
+```
+ const logout = (): void => {
+   userService.logout();
+   setUser(null);
+   window.location.href = '/cyberdataproject1/'; // THIS LINE
+ };
+```
+to `window.location.href = '/';` due to the next.js project structure, and vercel deployment rules.
 
 - Built with Next.js following App Router structure
 - Services handle GET/POST/PUT requests to backend
